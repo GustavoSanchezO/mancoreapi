@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Cotización {{ cotizacion.rfq }}
+    </title>
+
+    <link rel="stylesheet" href="cotizacion.css">
+
+</head>
+
+<body>
+
+
+    <!-- =========================================
+         ELEMENTOS FIJOS
+         ========================================= -->
+
+
+    <!-- ENCABEZADO -->
+
+    <header class="encabezado">
+
+        <div class="encabezado-titulo">
+            COTIZACIÓN
+        </div>
+
+    </header>
+
+
+    <!-- MARCA DE AGUA -->
+
+    <div class="marca-agua">
+
+        <img
+            src="assets/logo-mancore.jpeg"
+            alt=""
+        >
+
+    </div>
+
+
+    <!-- PIE DE PÁGINA -->
+
+    <footer class="pie-pagina">
+
+
+        <div class="contacto">
+
+            <div class="contacto-titulo">
+                CONTACTO
+            </div>
+
+            <div>
+                mancoreindustrial@gmail.com
+            </div>
+
+        </div>
+
+
+        <div class="logo">
+
+            <img
+                src="assets/logo-mancore.jpeg"
+                alt="Mancore"
+            >
+
+        </div>
+
+
+    </footer>
+
+
+    <!-- =========================================
+         CONTENIDO VARIABLE
+         ========================================= -->
+
+    <main class="contenido">
+
+
+        <!-- =====================================
+             RFQ / FECHA
+             ===================================== -->
+
+        <section class="informacion-superior">
+
+            <div class="datos-documento">
+
+                <div>
+                    RFQ:&nbsp;&nbsp;
+                    N° {{ cotizacion.rfq }}
+                </div>
+
+                <div>
+                    Fecha:&nbsp;&nbsp;
+                    {{ fecha_letras }}
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             INFORMACIÓN DEL CLIENTE
+             ===================================== -->
+
+        <section class="seccion">
+
+            <h2 class="titulo-seccion">
+                INFORMACIÓN DEL CLIENTE.
+            </h2>
+
+
+            <table class="informacion-tabla">
+
+                <tr>
+
+                    <td class="etiqueta">
+                        Nombre:
+                    </td>
+
+                    <td>
+                        {{ cotizacion.cliente.nombre_empresa }}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td class="etiqueta">
+                        Dirección:
+                    </td>
+
+                    <td>
+                        {{ cotizacion.cliente.direccion }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="etiqueta">
+                        Tiempo estimado:
+                    </td>
+
+                    <td>
+                        {{ cotizacion.tiempo_entrega_estimado }}
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </section>
+
+
+        <!-- =====================================
+             PROYECTO
+             ===================================== -->
+
+        <section class="seccion">
+
+            <h2 class="titulo-seccion">
+                PROYECTO.
+            </h2>
+
+
+            <table class="informacion-tabla">
+
+                <tr>
+
+                    <td class="etiqueta">
+                        Nombre:
+                    </td>
+
+                    <td>
+                        {{ cotizacion.proyecto.nombre }}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td class="etiqueta">
+                        Descripción:
+                    </td>
+
+                    <td>
+                        {{ cotizacion.proyecto.descripcion }}
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </section>
+
+
+        <!-- =====================================
+             TABLA DE PARTIDAS
+             ===================================== -->
+
+        <section class="seccion tabla-seccion">
+
+
+            <table class="tabla-partidas">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th class="col-descripcion">
+                            DESCRIPCIÓN
+                        </th>
+
+                        <th class="col-cantidad">
+                            CANTIDAD
+                        </th>
+
+                        <th class="col-precio">
+                            PRECIO UNITARIO
+                        </th>
+
+                        <th class="col-total">
+                            TOTAL
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for partida in partidas %}
+
+                    <tr class="partida">
+
+
+                        <td class="descripcion">
+                            {{ partida.descripcion | trim }}
+                        </td>
+
+
+                        <td class="cantidad">
+                            {{ partida.cantidad }}
+                        </td>
+
+
+                        <td class="precio">
+                            ${{ "{:,.2f}".format(partida.precio_unitario) }}
+                        </td>
+
+
+                        <td class="total">
+                            ${{ "{:,.2f}".format(partida.total) }}
+                        </td>
+
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+
+            </table>
+
+        </section>
+
+
+        <!-- =====================================
+             TOTALES
+             ===================================== -->
+
+        <section class="zona-totales">
+
+
+            <div class="linea-totales"></div>
+
+
+            <div class="contenedor-totales">
+
+
+                <div class="total-letra">
+
+                    Total:
+                    (Son {{ total_letras }}).
+
+                </div>
+
+
+                <table class="totales">
+
+
+                    <tr>
+
+                        <td class="etiqueta">
+                            Sub-total
+                        </td>
+
+                        <td class="valor">
+                            ${{ "{:,.2f}".format(subtotal) }}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td class="etiqueta">
+                            IVA (16%)
+                        </td>
+
+                        <td class="valor">
+                            ${{ "{:,.2f}".format(iva) }}
+                        </td>
+
+                    </tr>
+
+
+                    <tr class="fila-total">
+
+                        <td class="etiqueta">
+                            TOTAL
+                        </td>
+
+                        <td class="valor">
+                            ${{ "{:,.2f}".format(total) }}
+                        </td>
+
+                    </tr>
+
+
+                </table>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             NOTA IMPORTANTE
+             ===================================== -->
+
+        <section class="nota-importante">
+
+            <strong>NOTA IMPORTANTE:</strong>
+
+            La cotización no incluye ningún tipo de parte de reemplazo,
+            en caso de ser necesario se notificará la falla y se cotizará
+            por separado.
+
+        </section>
+
+
+        <!-- =====================================
+             TÉRMINOS Y CONDICIONES
+             ===================================== -->
+
+        <section class="terminos-condiciones">
+
+
+            <h2 class="terminos-titulo">
+                TÉRMINOS Y CONDICIONES
+            </h2>
+
+
+            <div class="termino">
+
+                <strong>Anticipo:</strong>
+
+                Para comenzar trabajos se requerirá la orden de compra
+                y un anticipo del 50% del valor total de la operación.
+                Dicho anticipo se puede recibir por medio de transferencia
+                bancaria o cheque.
+
+            </div>
+
+
+            <div class="termino">
+
+                <strong>Vigencia:</strong>
+
+                Los precios acordados en esta cotización serán válidos
+                por los próximos 15 días y están sujetos a modificaciones
+                sin previo aviso por el tipo de cambio.
+
+            </div>
+
+
+            <div class="termino">
+
+                <strong>Tiempo de entrega:</strong>
+
+                Una vez sea cubierto el anticipo los tiempos de entrega
+                son de {{ cotizacion.tiempo_entrega_estimado }}.
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</body>
+
+</html>
