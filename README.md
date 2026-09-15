@@ -37,3 +37,4 @@ API backend built with FastAPI, PostgreSQL, and Alembic.
    ```bash
    uvicorn app.main:app --reload
    ```
+# mancoreapi
