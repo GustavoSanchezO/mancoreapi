@@ -118,7 +118,6 @@ def remover_proyecto(
 @router.get("/google/login")
 async def google_login(request: Request):
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", str(request.url_for("google_callback")))
-    
     if redirect_uri.startswith("http://") and not ("localhost" in redirect_uri or "127.0.0.1" in redirect_uri):
         redirect_uri = redirect_uri.replace("http://", "https://", 1)
 
