@@ -23,6 +23,11 @@ jobs:
           cd ~/mancoreapi
           docker compose up -d --build api
 
+      - name: Aplicar migraciones
+        run: |
+          cd ~/mancoreapi
+          docker compose exec -T api alembic upgrade head
+
       - name: Verificar API
         run: |
           cd ~/mancoreapi
