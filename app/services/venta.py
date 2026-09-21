@@ -22,12 +22,15 @@ from app.models.costo_material_real import CostoMaterialReal
 from app.models.costo_mano_obra_real import CostoManoObraReal
 from app.models.costo_gasto_extra_real import CostoGastoExtraReal
 from app.models.impuesto_mensual import ImpuestoMensual
+from app.models.usuario import Usuario
+from app.services.seguridad_db import aplicar_filtro_test
 
 def crear_venta(
     db: Session,
     cotizacion_id: int,
     fecha, 
-    fecha_pago
+    fecha_pago,
+    usuario: Usuario
 ):
     cotizacion = (
         db.query(CotizacionDB)
@@ -69,7 +72,9 @@ def crear_venta(
             subtotal=cotizacion.subtotal,
             iva=cotizacion.iva,
             total=cotizacion.total,
-            estado="PENDIENTE"
+            estado="PENDIENTE",
+            usuario_id=usuario.id,
+            es_test=usuario.es_test
         )
 
         db.add(venta)
@@ -83,7 +88,7 @@ def crear_venta(
         db.rollback()
         raise
 
-def obtener_ventas(db: Session, usuario=None):
+def obtener_ventas(db: Session, usuario: Usuario):
     query = db.query(Venta)
     if usuario and usuario.rol == "EMPLEADO":
         from app.models.usuario_proyecto import usuario_proyecto
@@ -94,12 +99,13 @@ def obtener_ventas(db: Session, usuario=None):
         ).filter(
             usuario_proyecto.c.usuario_id == usuario.id
         )
+    query = aplicar_filtro_test(query, Venta, usuario)
     return query.order_by(Venta.fecha_creacion.desc()).all()
 
 def obtener_venta(
     db: Session,
     venta_id: int,
-    usuario=None
+    usuario: Usuario
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
@@ -111,12 +117,13 @@ def obtener_venta(
         ).filter(
             usuario_proyecto.c.usuario_id == usuario.id
         )
+    query = aplicar_filtro_test(query, Venta, usuario)
     return query.first()
 
 def obtener_venta_detalle(
     db: Session,
     venta_id: int,
-    usuario=None
+    usuario: Usuario
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
@@ -128,6 +135,7 @@ def obtener_venta_detalle(
         ).filter(
             usuario_proyecto.c.usuario_id == usuario.id
         )
+    query = aplicar_filtro_test(query, Venta, usuario)
     venta = query.first()
 
     if not venta:
@@ -309,13 +317,12 @@ def actualizar_estado_venta(
 
 def obtener_rentabilidad_venta(
     db: Session,
-    venta_id: int
+    venta_id: int,
+    usuario: Usuario
 ):
-    venta = (
-        db.query(Venta)
-        .filter(Venta.id == venta_id)
-        .first()
-    )
+    query = db.query(Venta).filter(Venta.id == venta_id)
+    query = aplicar_filtro_test(query, Venta, usuario)
+    venta = query.first()
 
     if not venta:
         return None
@@ -464,8 +471,8 @@ def obtener_rentabilidad_venta(
         "margen_porcentaje": margen_porcentaje
     }
 
-def actualizar_venta(db: Session, venta_id: int, venta_actualizar: VentaActualizar):
-    venta = obtener_venta(db, venta_id)
+def actualizar_venta(db: Session, venta_id: int, venta_actualizar: VentaActualizar, usuario: Usuario):
+    venta = obtener_venta(db, venta_id, usuario)
     if not venta:
         raise ValueError(f"Venta con id {venta_id} no encontrada.")
     if venta_actualizar.fecha is not None:

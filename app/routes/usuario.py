@@ -108,6 +108,16 @@ async def google_login(request: Request):
     )
 
 
+def obtener_frontend_url(request: Request) -> str:
+    origin_or_referer = request.headers.get("origin") or request.headers.get("referer") or ""
+    if "localhost" in origin_or_referer or "127.0.0.1" in origin_or_referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(origin_or_referer)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
+
+
 @router.get("/google/callback", name="google_callback")
 async def google_callback(
     request: Request,
@@ -126,6 +136,8 @@ async def google_callback(
         .first()
     )
 
+    frontend_url = obtener_frontend_url(request)
+
     if not usuario:
         request.session["google_pending"] = {
             "google_id": google_id,
@@ -133,7 +145,6 @@ async def google_callback(
             "nombre": nombre
         }
 
-        frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
         return RedirectResponse(
             url=f"{frontend_url}/login?requiere_invitacion=true",
             status_code=303
@@ -151,7 +162,6 @@ async def google_callback(
     db.commit()
 
     request.session["user_id"] = usuario.id
-    frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
 
     return RedirectResponse(
         url=f"{frontend_url}/",

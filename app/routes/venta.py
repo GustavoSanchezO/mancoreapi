@@ -44,7 +44,8 @@ def crear_venta_endpoint(
             db=db,
             cotizacion_id=venta.cotizacion_id,
             fecha=venta.fecha,
-            fecha_pago=venta.fecha_pago
+            fecha_pago=venta.fecha_pago,
+            usuario=usuario
         )
         return nueva_venta
     except ValueError as e:
@@ -110,7 +111,7 @@ def obtener_rentabilidad_venta_endpoint(
     db: Session = Depends(get_db)
 ):
     try:
-        rentabilidad = obtener_rentabilidad_venta(db, venta_id)
+        rentabilidad = obtener_rentabilidad_venta(db, venta_id, usuario)
         return rentabilidad
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -126,7 +127,7 @@ def actualizar_venta_endpoint(
     db: Session = Depends(get_db)
 ):
     try:
-        venta_actualizada = actualizar_venta(db, venta_id, datos)
+        venta_actualizada = actualizar_venta(db, venta_id, datos, usuario)
         return venta_actualizada
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

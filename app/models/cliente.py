@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -34,4 +34,16 @@ class Cliente(Base):
         Boolean,
         nullable=False,
         default=True
+    )
+
+    usuario_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True
+    )
+
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
     )

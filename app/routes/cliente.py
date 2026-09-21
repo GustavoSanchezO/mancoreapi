@@ -29,7 +29,8 @@ def crear_cliente(
 ):
     return cliente_service.crear_cliente(
         db,
-        datos
+        datos,
+        usuario
     )
 
 
@@ -41,7 +42,7 @@ def listar_clientes(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user)
 ):
-    return cliente_service.obtener_clientes(db)
+    return cliente_service.obtener_clientes(db, usuario)
 
 
 @router.get(
@@ -55,7 +56,8 @@ def obtener_cliente(
 ):
     cliente = cliente_service.obtener_cliente(
         db,
-        cliente_id
+        cliente_id,
+        usuario
     )
 
     if not cliente:
@@ -79,7 +81,8 @@ def actualizar_cliente(
 ):
     cliente = cliente_service.obtener_cliente(
         db,
-        cliente_id
+        cliente_id,
+        usuario
     )
 
     if not cliente:
@@ -106,7 +109,8 @@ def eliminar_cliente(
 ):
     cliente = cliente_service.obtener_cliente(
         db,
-        cliente_id
+        cliente_id,
+        usuario
     )
 
     if not cliente:

@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Integer, Numeric, String
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -20,7 +20,7 @@ class PartidaCotizacion(Base):
     )
 
     descripcion: Mapped[str] = mapped_column(
-        String(2000),
+        Text,
         nullable=False
     )
 

@@ -1,7 +1,7 @@
 from decimal import Decimal
-
 from sqlalchemy.orm import Session
 
+from app.models.usuario import Usuario
 from app.models.cliente import Cliente
 from app.models.proyecto import Proyecto
 from app.models.cotizacion_db import CotizacionDB
@@ -10,12 +10,13 @@ from app.models.material_cotizacion import MaterialCotizacion
 from app.models.mano_obra_cotizada import ManoObraCotizada
 from app.models.gasto_extra_cotizado import GastoExtraCotizado
 from app.models.costo_material_real import CostoMaterialReal
+from app.services.seguridad_db import aplicar_filtro_test
 
 
 IVA = Decimal("0.16")
 
 
-def crear_cotizacion(db: Session, datos, usuario_id: int):
+def crear_cotizacion(db: Session, datos, usuario: Usuario):
     # Validar cliente
     cliente = (
         db.query(Cliente)
@@ -50,7 +51,8 @@ def crear_cotizacion(db: Session, datos, usuario_id: int):
             fecha=datos.fecha,
             cliente_id=datos.cliente_id,
             proyecto_id=datos.proyecto_id,
-            usuario_id=usuario_id,
+            usuario_id=usuario.id,
+            es_test=usuario.es_test,
             tiempo_entrega_estimado=datos.tiempo_entrega_estimado,
             estado="COTIZACION",
             subtotal=Decimal("0.00"),
@@ -159,7 +161,7 @@ def crear_cotizacion(db: Session, datos, usuario_id: int):
         db.rollback()
         raise
 
-def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario=None):
+def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario: Usuario):
     query = db.query(CotizacionDB).filter(CotizacionDB.id == cotizacion_id)
     if usuario and usuario.rol == "EMPLEADO":
         from app.models.usuario_proyecto import usuario_proyecto
@@ -169,7 +171,7 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario=None):
         ).filter(
             usuario_proyecto.c.usuario_id == usuario.id
         )
-    
+    query = aplicar_filtro_test(query, CotizacionDB, usuario)
     cotizacion = query.first()
 
     if not cotizacion:
@@ -238,7 +240,7 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario=None):
         "partidas": resultado_partidas
     }
 
-def obtener_cotizaciones(db: Session, usuario=None):
+def obtener_cotizaciones(db: Session, usuario: Usuario):
     query = db.query(CotizacionDB)
     if usuario and usuario.rol == "EMPLEADO":
         from app.models.usuario_proyecto import usuario_proyecto
@@ -248,6 +250,7 @@ def obtener_cotizaciones(db: Session, usuario=None):
         ).filter(
             usuario_proyecto.c.usuario_id == usuario.id
         )
+    query = aplicar_filtro_test(query, CotizacionDB, usuario)
     return query.order_by(CotizacionDB.fecha_creacion.desc()).all()
 
 def actualizar_cotizacion(

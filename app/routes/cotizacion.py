@@ -27,6 +27,7 @@ from app.services.cotizacion_db import (
     actualizar_cotizacion,
     actualizar_estado_cotizacion
 )
+from app.services.seguridad_db import aplicar_filtro_test
 from app.services.pdf import generar_pdf
 
 
@@ -97,7 +98,7 @@ def crear_cotizacion_endpoint(
     cotizacion = crear_cotizacion(
         db=db,
         datos=datos,
-        usuario_id=usuario.id
+        usuario=usuario
     )
 
     if not cotizacion:
@@ -153,11 +154,9 @@ def generar_pdf_cotizacion(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    cotizacion = (
-        db.query(CotizacionDB)
-        .filter(CotizacionDB.id == cotizacion_id)
-        .first()
-    )
+    query = db.query(CotizacionDB).filter(CotizacionDB.id == cotizacion_id)
+    query = aplicar_filtro_test(query, CotizacionDB, usuario)
+    cotizacion = query.first()
 
     if not cotizacion:
         raise HTTPException(

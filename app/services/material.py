@@ -1,21 +1,22 @@
 from sqlalchemy.orm import Session
+from app.models.usuario import Usuario
 
 from app.models.material import Material
+from app.services.seguridad_db import aplicar_filtro_test
 
 
 def crear_material(
     db: Session,
     nombre: str,
     unidad: str,
-    codigo: str | None
+    codigo: str | None,
+    usuario: Usuario
 ):
     # Verificar que el código no esté utilizado
     if codigo:
-        material_existente = (
-            db.query(Material)
-            .filter(Material.codigo == codigo)
-            .first()
-        )
+        query = db.query(Material).filter(Material.codigo == codigo)
+        query = aplicar_filtro_test(query, Material, usuario)
+        material_existente = query.first()
 
         if material_existente:
             raise ValueError(
@@ -27,7 +28,9 @@ def crear_material(
             nombre=nombre,
             unidad=unidad,
             codigo=codigo,
-            activo=True
+            activo=True,
+            usuario_id=usuario.id,
+            es_test=usuario.es_test
         )
 
         db.add(material)
@@ -41,24 +44,27 @@ def crear_material(
         raise
 
 
-def obtener_materiales(db: Session):
-    return (
+def obtener_materiales(db: Session, usuario: Usuario):
+    query = (
         db.query(Material)
         .filter(Material.activo == True)
         .order_by(Material.id)
-        .all()
     )
+    query = aplicar_filtro_test(query, Material, usuario)
+    return query.all()
 
 
 def obtener_material(
     db: Session,
-    material_id: int
+    material_id: int,
+    usuario: Usuario
 ):
-    return (
+    query = (
         db.query(Material)
         .filter(Material.id == material_id)
-        .first()
     )
+    query = aplicar_filtro_test(query, Material, usuario)
+    return query.first()
 
 
 def actualizar_material(
@@ -66,13 +72,15 @@ def actualizar_material(
     material_id: int,
     nombre: str,
     unidad: str,
-    codigo: str | None
+    codigo: str | None,
+    usuario: Usuario
 ):
-    material = (
+    query = (
         db.query(Material)
         .filter(Material.id == material_id)
-        .first()
     )
+    query = aplicar_filtro_test(query, Material, usuario)
+    material = query.first()
 
     if not material:
         return None
@@ -80,14 +88,15 @@ def actualizar_material(
     # Verificar que el nuevo código no pertenezca
     # a otro material
     if codigo:
-        material_existente = (
+        query_existente = (
             db.query(Material)
             .filter(
                 Material.codigo == codigo,
                 Material.id != material_id
             )
-            .first()
         )
+        query_existente = aplicar_filtro_test(query_existente, Material, usuario)
+        material_existente = query_existente.first()
 
         if material_existente:
             raise ValueError(
@@ -111,13 +120,15 @@ def actualizar_material(
 
 def desactivar_material(
     db: Session,
-    material_id: int
+    material_id: int,
+    usuario: Usuario
 ):
-    material = (
+    query = (
         db.query(Material)
         .filter(Material.id == material_id)
-        .first()
     )
+    query = aplicar_filtro_test(query, Material, usuario)
+    material = query.first()
 
     if not material:
         return None

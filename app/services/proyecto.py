@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.models.usuario import Usuario
 
 from app.models.proyecto import Proyecto
 from app.models.cliente import Cliente
@@ -6,11 +7,13 @@ from app.models.proyecto_schema import (
     ProyectoCrear,
     ProyectoActualizar
 )
+from app.services.seguridad_db import aplicar_filtro_test
 
 
 def crear_proyecto(
     db: Session,
-    datos: ProyectoCrear
+    datos: ProyectoCrear,
+    usuario: Usuario
 ):
     cliente = (
         db.query(Cliente)
@@ -27,7 +30,9 @@ def crear_proyecto(
     proyecto = Proyecto(
         nombre=datos.nombre,
         descripcion=datos.descripcion,
-        cliente_id=datos.cliente_id
+        cliente_id=datos.cliente_id,
+        usuario_id=usuario.id,
+        es_test=usuario.es_test
     )
 
     db.add(proyecto)
@@ -37,23 +42,25 @@ def crear_proyecto(
     return proyecto
 
 
-def obtener_proyectos(db: Session, usuario=None):
+def obtener_proyectos(db: Session, usuario: Usuario):
     query = db.query(Proyecto)
     if usuario and usuario.rol == "EMPLEADO":
         from app.models.usuario_proyecto import usuario_proyecto
         query = query.join(usuario_proyecto).filter(usuario_proyecto.c.usuario_id == usuario.id)
+    query = aplicar_filtro_test(query, Proyecto, usuario)
     return query.all()
 
 
 def obtener_proyecto(
     db: Session,
     proyecto_id: int,
-    usuario=None
+    usuario: Usuario
 ):
     query = db.query(Proyecto).filter(Proyecto.id == proyecto_id)
     if usuario and usuario.rol == "EMPLEADO":
         from app.models.usuario_proyecto import usuario_proyecto
         query = query.join(usuario_proyecto).filter(usuario_proyecto.c.usuario_id == usuario.id)
+    query = aplicar_filtro_test(query, Proyecto, usuario)
     return query.first()
 
 
@@ -100,7 +107,9 @@ def eliminar_proyecto(
 
     return proyecto
 
-def obtener_proyectos_cancelados(db: Session):
-    return db.query(Proyecto).filter(
+def obtener_proyectos_cancelados(db: Session, usuario: Usuario):
+    query = db.query(Proyecto).filter(
         Proyecto.estado == "CANCELADO"
-    ).all()
+    )
+    query = aplicar_filtro_test(query, Proyecto, usuario)
+    return query.all()

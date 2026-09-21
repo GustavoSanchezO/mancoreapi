@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -44,6 +44,18 @@ class Proyecto(Base):
         String(50),
         nullable=False,
         default="COTIZACION"
+    )
+
+    usuario_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True
+    )
+
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
     )
 
     usuarios: Mapped[List["Usuario"]] = relationship(

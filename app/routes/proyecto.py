@@ -29,7 +29,8 @@ def crear_proyecto(
 ):
     proyecto = proyecto_service.crear_proyecto(
         db,
-        datos
+        datos,
+        usuario
     )
 
     if not proyecto:
@@ -59,7 +60,7 @@ def listar_proyectos_cancelados(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_admin)
 ):
-    return proyecto_service.obtener_proyectos_cancelados(db)
+    return proyecto_service.obtener_proyectos_cancelados(db, usuario)
 
 @router.get(
     "/{proyecto_id}",

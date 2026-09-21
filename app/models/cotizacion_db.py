@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -71,4 +71,10 @@ class CotizacionDB(Base):
         DateTime,
         nullable=False,
         default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
     )

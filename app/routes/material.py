@@ -38,7 +38,8 @@ def crear_material_endpoint(
             db=db,
             nombre=datos.nombre,
             unidad=datos.unidad,
-            codigo=datos.codigo
+            codigo=datos.codigo,
+            usuario=usuario
         )
 
     except ValueError as e:
@@ -58,7 +59,7 @@ def listar_materiales_endpoint(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return obtener_materiales(db)
+    return obtener_materiales(db, usuario)
 
 
 @router.get(
@@ -72,7 +73,8 @@ def obtener_material_endpoint(
 ):
     material = obtener_material(
         db=db,
-        material_id=material_id
+        material_id=material_id,
+        usuario=usuario
     )
 
     if not material:
@@ -100,7 +102,8 @@ def actualizar_material_endpoint(
             material_id=material_id,
             nombre=datos.nombre,
             unidad=datos.unidad,
-            codigo=datos.codigo
+            codigo=datos.codigo,
+            usuario=usuario
         )
 
     except ValueError as e:
@@ -129,7 +132,8 @@ def eliminar_material_endpoint(
 ):
     material = desactivar_material(
         db=db,
-        material_id=material_id
+        material_id=material_id,
+        usuario=usuario
     )
 
     if not material:

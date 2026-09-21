@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -56,4 +56,16 @@ class Venta(Base):
     fecha_pago: Mapped[date] = mapped_column(
     Date,
     nullable=False
+    )
+
+    usuario_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True
+    )
+
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
     )

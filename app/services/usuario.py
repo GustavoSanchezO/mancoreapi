@@ -221,6 +221,9 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
             # Eliminar cotizaciones
             db.query(CotizacionDB).filter(CotizacionDB.id.in_(cot_ids)).delete(synchronize_session=False)
 
+        # Eliminar ventas huérfanas creadas por el usuario (si hubiera alguna fuera del flujo de arriba)
+        db.query(Venta).filter(Venta.usuario_id == usuario.id).delete(synchronize_session=False)
+
         # 2. Códigos de invitación del usuario
         db.query(CodigoInvitacion).filter(
             (CodigoInvitacion.creado_por == usuario.id) | (CodigoInvitacion.usuario_id == usuario.id)
@@ -230,7 +233,16 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
         usuario.proyectos.clear()
         db.flush()
 
-        # 4. Eliminar finalmente el registro de Usuario
+        # 4. Eliminar Entidades aisladas: Proyecto, Cliente, Material
+        from app.models.proyecto import Proyecto
+        from app.models.cliente import Cliente
+        from app.models.material import Material
+        
+        db.query(Proyecto).filter(Proyecto.usuario_id == usuario.id).delete(synchronize_session=False)
+        db.query(Cliente).filter(Cliente.usuario_id == usuario.id).delete(synchronize_session=False)
+        db.query(Material).filter(Material.usuario_id == usuario.id).delete(synchronize_session=False)
+
+        # 5. Eliminar finalmente el registro de Usuario
         db.delete(usuario)
         db.commit()
         return True

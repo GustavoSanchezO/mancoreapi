@@ -1,19 +1,24 @@
 from sqlalchemy.orm import Session
+from app.models.usuario import Usuario
 
 from app.models.cliente import Cliente
 from app.models.cliente_schema import (
     ClienteCrear,
     ClienteActualizar
 )
+from app.services.seguridad_db import aplicar_filtro_test
 
 
 def crear_cliente(
     db: Session,
-    datos: ClienteCrear
+    datos: ClienteCrear,
+    usuario: Usuario
 ):
     cliente = Cliente(
         nombre_empresa=datos.nombre_empresa,
-        direccion=datos.direccion
+        direccion=datos.direccion,
+        usuario_id=usuario.id,
+        es_test=usuario.es_test
     )
 
     db.add(cliente)
@@ -23,20 +28,25 @@ def crear_cliente(
     return cliente
 
 
-def obtener_clientes(db: Session):
-    return db.query(Cliente).filter(
+def obtener_clientes(db: Session, usuario: Usuario):
+    query = db.query(Cliente).filter(
         Cliente.activo == True
-    ).all()
+    )
+    query = aplicar_filtro_test(query, Cliente, usuario)
+    return query.all()
 
 
 def obtener_cliente(
     db: Session,
-    cliente_id: int
+    cliente_id: int,
+    usuario: Usuario
 ):
-    return db.query(Cliente).filter(
+    query = db.query(Cliente).filter(
         Cliente.id == cliente_id,
         Cliente.activo == True
-    ).first()
+    )
+    query = aplicar_filtro_test(query, Cliente, usuario)
+    return query.first()
 
 
 def actualizar_cliente(
