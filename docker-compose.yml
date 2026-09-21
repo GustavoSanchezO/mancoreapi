@@ -1,0 +1,34 @@
+services:
+
+  db:
+    image: postgres:18
+    container_name: mancore-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mancore
+      POSTGRES_USER: mancore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - mancore_postgres_data:/var/lib/postgresql
+    networks:
+      - mancore-network
+
+  api:
+    build: .
+    container_name: mancore-api
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8001:8000"
+    networks:
+      - mancore-network
+
+volumes:
+  mancore_postgres_data:
+
+networks:
+  mancore-network:
+    driver: bridge

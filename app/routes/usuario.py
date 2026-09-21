@@ -117,13 +117,15 @@ def remover_proyecto(
 
 @router.get("/google/login")
 async def google_login(request: Request):
-    redirect_uri = request.url_for("google_callback")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", str(request.url_for("google_callback")))
+    
+    if redirect_uri.startswith("http://") and not ("localhost" in redirect_uri or "127.0.0.1" in redirect_uri):
+        redirect_uri = redirect_uri.replace("http://", "https://", 1)
 
     return await oauth.google.authorize_redirect(
         request,
         redirect_uri
     )
-
 
 @router.get("/google/callback", name="google_callback")
 async def google_callback(
@@ -151,7 +153,7 @@ async def google_callback(
         "nombre": nombre
         }
 
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
         return RedirectResponse(
             url=f"{frontend_url}/login?requiere_invitacion=true",
             status_code=303
@@ -171,7 +173,7 @@ async def google_callback(
 
     request.session["user_id"] = usuario.id
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
 
     return RedirectResponse(
         url=f"{frontend_url}/",
