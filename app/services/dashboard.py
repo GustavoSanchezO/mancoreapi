@@ -13,10 +13,14 @@ from app.models.impuesto_mensual import ImpuestoMensual
 from app.models.venta import Venta
 
 
+from app.models.usuario import Usuario
+from app.services.seguridad_db import aplicar_filtro_test
+
 def obtener_resumen_dashboard(
     db: Session,
     año: int,
-    mes: int
+    mes: int,
+    usuario: Usuario
 ):
     primer_dia = date(año, mes, 1)
 
@@ -29,14 +33,12 @@ def obtener_resumen_dashboard(
     # VENTAS DEL MES
     # -----------------------------------------
 
-    ventas = (
-        db.query(Venta)
-        .filter(
-            Venta.fecha >= primer_dia,
-            Venta.fecha < primer_dia_siguiente
-        )
-        .all()
+    query_ventas = db.query(Venta).filter(
+        Venta.fecha >= primer_dia,
+        Venta.fecha < primer_dia_siguiente
     )
+    query_ventas = aplicar_filtro_test(query_ventas, Venta, usuario)
+    ventas = query_ventas.all()
 
     ventas_no_canceladas = [
         venta
@@ -64,60 +66,43 @@ def obtener_resumen_dashboard(
     # COSTOS REALES
     # -----------------------------------------
 
-    costos_materiales = (
-        db.query(
-            func.coalesce(
-                func.sum(CostoMaterialReal.total),
-                0
-            )
-        )
-        .filter(
-            CostoMaterialReal.fecha >= primer_dia,
-            CostoMaterialReal.fecha < primer_dia_siguiente
-        )
-        .scalar()
+    query_materiales = db.query(func.coalesce(func.sum(CostoMaterialReal.total), 0)).join(
+        Venta, CostoMaterialReal.venta_id == Venta.id
+    ).filter(
+        CostoMaterialReal.fecha >= primer_dia,
+        CostoMaterialReal.fecha < primer_dia_siguiente
     )
+    query_materiales = aplicar_filtro_test(query_materiales, Venta, usuario)
+    costos_materiales = query_materiales.scalar()
 
-    costos_mano_obra = (
-        db.query(
-            func.coalesce(
-                func.sum(CostoManoObraReal.total),
-                0
-            )
-        )
-        .filter(
-            CostoManoObraReal.fecha >= primer_dia,
-            CostoManoObraReal.fecha < primer_dia_siguiente
-        )
-        .scalar()
+    query_mano_obra = db.query(func.coalesce(func.sum(CostoManoObraReal.total), 0)).join(
+        Venta, CostoManoObraReal.venta_id == Venta.id
+    ).filter(
+        CostoManoObraReal.fecha >= primer_dia,
+        CostoManoObraReal.fecha < primer_dia_siguiente
     )
+    query_mano_obra = aplicar_filtro_test(query_mano_obra, Venta, usuario)
+    costos_mano_obra = query_mano_obra.scalar()
 
-    costos_gastos_extra = (
-        db.query(
-            func.coalesce(
-                func.sum(CostoGastoExtraReal.total),
-                0
-            )
-        )
-        .filter(
-            CostoGastoExtraReal.fecha >= primer_dia,
-            CostoGastoExtraReal.fecha < primer_dia_siguiente
-        )
-        .scalar()
+    query_gastos_extra = db.query(func.coalesce(func.sum(CostoGastoExtraReal.total), 0)).join(
+        Venta, CostoGastoExtraReal.venta_id == Venta.id
+    ).filter(
+        CostoGastoExtraReal.fecha >= primer_dia,
+        CostoGastoExtraReal.fecha < primer_dia_siguiente
     )
+    query_gastos_extra = aplicar_filtro_test(query_gastos_extra, Venta, usuario)
+    costos_gastos_extra = query_gastos_extra.scalar()
 
     # -----------------------------------------
     # IMPUESTOS
     # -----------------------------------------
 
-    impuesto = (
-        db.query(ImpuestoMensual)
-        .filter(
-            ImpuestoMensual.año == año,
-            ImpuestoMensual.mes == mes
-        )
-        .first()
+    query_impuesto = db.query(ImpuestoMensual).filter(
+        ImpuestoMensual.año == año,
+        ImpuestoMensual.mes == mes
     )
+    query_impuesto = aplicar_filtro_test(query_impuesto, ImpuestoMensual, usuario)
+    impuesto = query_impuesto.first()
 
     impuestos_mes = (
         impuesto.total_impuestos
@@ -155,25 +140,21 @@ def obtener_resumen_dashboard(
     # COTIZACIONES
     # -----------------------------------------
 
-    cotizaciones_enviadas = (
-        db.query(func.count(CotizacionDB.id))
-        .filter(
-            CotizacionDB.fecha >= primer_dia,
-            CotizacionDB.fecha < primer_dia_siguiente,
-            CotizacionDB.estado == "ENVIADA"
-        )
-        .scalar()
+    query_enviadas = db.query(func.count(CotizacionDB.id)).filter(
+        CotizacionDB.fecha >= primer_dia,
+        CotizacionDB.fecha < primer_dia_siguiente,
+        CotizacionDB.estado == "ENVIADA"
     )
+    query_enviadas = aplicar_filtro_test(query_enviadas, CotizacionDB, usuario)
+    cotizaciones_enviadas = query_enviadas.scalar()
 
-    cotizaciones_aceptadas = (
-        db.query(func.count(CotizacionDB.id))
-        .filter(
-            CotizacionDB.fecha >= primer_dia,
-            CotizacionDB.fecha < primer_dia_siguiente,
-            CotizacionDB.estado == "ACEPTADA"
-        )
-        .scalar()
+    query_aceptadas = db.query(func.count(CotizacionDB.id)).filter(
+        CotizacionDB.fecha >= primer_dia,
+        CotizacionDB.fecha < primer_dia_siguiente,
+        CotizacionDB.estado == "ACEPTADA"
     )
+    query_aceptadas = aplicar_filtro_test(query_aceptadas, CotizacionDB, usuario)
+    cotizaciones_aceptadas = query_aceptadas.scalar()
 
     return {
         "ventas_mes": ventas_mes,

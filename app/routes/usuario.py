@@ -240,6 +240,12 @@ def generar_codigo_invitacion(
     usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
+    if usuario.es_test:
+        raise HTTPException(
+            status_code=403,
+            detail="Los usuarios de prueba no pueden generar invitaciones reales."
+        )
+
     nueva_invitacion = usuario_service.generar_codigo_invitacion(db, usuario.id)
 
     return {

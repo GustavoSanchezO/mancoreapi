@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Integer, Numeric, UniqueConstraint
+from sqlalchemy import DateTime, Integer, Numeric, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -36,10 +36,14 @@ class ImpuestoMensual(Base):
         default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
 
-    __table_args__ = (
-        UniqueConstraint(
-            "año",
-            "mes",
-            name="uq_impuestos_mensuales_año_mes"
-        ),
+    usuario_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True
+    )
+
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
     )

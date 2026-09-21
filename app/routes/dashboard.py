@@ -37,5 +37,6 @@ def obtener_dashboard(
     return obtener_resumen_dashboard(
         db=db,
         año=año,
-        mes=mes
+        mes=mes,
+        usuario=usuario
     )

@@ -39,7 +39,8 @@ def crear_impuesto_mensual_endpoint(
             db=db,
             año=datos.año,
             mes=datos.mes,
-            total_impuestos=datos.total_impuestos
+            total_impuestos=datos.total_impuestos,
+            usuario=usuario
         )
 
     except ValueError as e:
@@ -59,7 +60,7 @@ def listar_impuestos_mensuales_endpoint(
     usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    return obtener_impuestos_mensuales(db)
+    return obtener_impuestos_mensuales(db, usuario)
 
 
 @router.get(
@@ -73,7 +74,8 @@ def obtener_impuesto_mensual_endpoint(
 ):
     impuesto = obtener_impuesto_mensual(
         db=db,
-        impuesto_id=impuesto_id
+        impuesto_id=impuesto_id,
+        usuario=usuario
     )
 
     if not impuesto:
@@ -98,7 +100,8 @@ def actualizar_impuesto_mensual_endpoint(
     impuesto = actualizar_impuesto_mensual(
         db=db,
         impuesto_id=impuesto_id,
-        total_impuestos=datos.total_impuestos
+        total_impuestos=datos.total_impuestos,
+        usuario=usuario
     )
 
     if not impuesto:

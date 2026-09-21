@@ -196,19 +196,43 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
         return False
 
     try:
-        # 1. Obtener IDs de cotizaciones pertenecientes al usuario
-        cot_ids = [c[0] for c in db.query(CotizacionDB.id).filter(CotizacionDB.usuario_id == usuario.id).all()]
-        
-        if cot_ids:
-            # Ventas asociadas a las cotizaciones
-            venta_ids = [v[0] for v in db.query(Venta.id).filter(Venta.cotizacion_id.in_(cot_ids)).all()]
-            if venta_ids:
-                # Costos reales asociados a las ventas
-                db.query(CostoMaterialReal).filter(CostoMaterialReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
-                db.query(CostoManoObraReal).filter(CostoManoObraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
-                db.query(CostoGastoExtraReal).filter(CostoGastoExtraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
-                db.query(Venta).filter(Venta.id.in_(venta_ids)).delete(synchronize_session=False)
+        from app.models.proyecto import Proyecto
+        from app.models.cliente import Cliente
+        from app.models.material import Material
+        from app.models.impuesto_mensual import ImpuestoMensual
 
+        # Obtener dependencias para evitar errores de FK
+        cliente_ids = [c[0] for c in db.query(Cliente.id).filter(Cliente.usuario_id == usuario.id).all()]
+        proyecto_ids = [p[0] for p in db.query(Proyecto.id).filter(Proyecto.usuario_id == usuario.id).all()]
+        material_ids = [m[0] for m in db.query(Material.id).filter(Material.usuario_id == usuario.id).all()]
+
+        # 1. Obtener IDs de cotizaciones pertenecientes al usuario o que usan sus clientes/proyectos
+        condiciones = [CotizacionDB.usuario_id == usuario.id]
+        if cliente_ids:
+            condiciones.append(CotizacionDB.cliente_id.in_(cliente_ids))
+        if proyecto_ids:
+            condiciones.append(CotizacionDB.proyecto_id.in_(proyecto_ids))
+            
+        from sqlalchemy import or_
+        cot_ids = [c[0] for c in db.query(CotizacionDB.id).filter(or_(*condiciones)).all()]
+        
+        # Obtener IDs de ventas creadas por el usuario o relacionadas a las cotizaciones a eliminar
+        ventas_query = db.query(Venta.id).filter(Venta.usuario_id == usuario.id)
+        if cot_ids:
+            ventas_query = db.query(Venta.id).filter(
+                (Venta.usuario_id == usuario.id) | (Venta.cotizacion_id.in_(cot_ids))
+            )
+        venta_ids = [v[0] for v in ventas_query.all()]
+
+        if venta_ids:
+            # Costos reales asociados a las ventas
+            db.query(CostoMaterialReal).filter(CostoMaterialReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+            db.query(CostoManoObraReal).filter(CostoManoObraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+            db.query(CostoGastoExtraReal).filter(CostoGastoExtraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+            # Eliminar ventas
+            db.query(Venta).filter(Venta.id.in_(venta_ids)).delete(synchronize_session=False)
+
+        if cot_ids:
             # Partidas asociadas a las cotizaciones
             partida_ids = [p[0] for p in db.query(PartidaCotizacion.id).filter(PartidaCotizacion.cotizacion_id.in_(cot_ids)).all()]
             if partida_ids:
@@ -221,28 +245,26 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
             # Eliminar cotizaciones
             db.query(CotizacionDB).filter(CotizacionDB.id.in_(cot_ids)).delete(synchronize_session=False)
 
-        # Eliminar ventas huérfanas creadas por el usuario (si hubiera alguna fuera del flujo de arriba)
-        db.query(Venta).filter(Venta.usuario_id == usuario.id).delete(synchronize_session=False)
+        # 2. Desvincular materiales para evitar FK en otras cotizaciones
+        if material_ids:
+            db.query(MaterialCotizacion).filter(MaterialCotizacion.material_id.in_(material_ids)).update({MaterialCotizacion.material_id: None}, synchronize_session=False)
 
-        # 2. Códigos de invitación del usuario
+        # 3. Códigos de invitación del usuario
         db.query(CodigoInvitacion).filter(
             (CodigoInvitacion.creado_por == usuario.id) | (CodigoInvitacion.usuario_id == usuario.id)
         ).delete(synchronize_session=False)
 
-        # 3. Remover de la tabla intermedia usuario_proyecto
+        # 4. Remover de la tabla intermedia usuario_proyecto
         usuario.proyectos.clear()
         db.flush()
 
-        # 4. Eliminar Entidades aisladas: Proyecto, Cliente, Material
-        from app.models.proyecto import Proyecto
-        from app.models.cliente import Cliente
-        from app.models.material import Material
-        
+        # 5. Eliminar Entidades aisladas: Proyecto, Cliente, Material, ImpuestoMensual
         db.query(Proyecto).filter(Proyecto.usuario_id == usuario.id).delete(synchronize_session=False)
         db.query(Cliente).filter(Cliente.usuario_id == usuario.id).delete(synchronize_session=False)
         db.query(Material).filter(Material.usuario_id == usuario.id).delete(synchronize_session=False)
+        db.query(ImpuestoMensual).filter(ImpuestoMensual.usuario_id == usuario.id).delete(synchronize_session=False)
 
-        # 5. Eliminar finalmente el registro de Usuario
+        # 6. Eliminar finalmente el registro de Usuario
         db.delete(usuario)
         db.commit()
         return True
