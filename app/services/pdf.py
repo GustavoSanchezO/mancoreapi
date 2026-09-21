@@ -11,7 +11,7 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 
 
 templates = Environment(
-    loader=FileSystemLoader("app/templates") 
+    loader=FileSystemLoader(str(TEMPLATES_DIR))
 )
 
 

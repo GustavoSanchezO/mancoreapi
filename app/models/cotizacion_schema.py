@@ -62,16 +62,6 @@ class CotizacionCrear(BaseModel):
     )
 
 
-class CotizacionActualizar(BaseModel):
-    rfq: str | None = Field(default=None, min_length=1)
-    fecha: date | None = None
-    cliente_id: int | None = Field(default=None, gt=0)
-    proyecto_id: int | None = Field(default=None, gt=0)
-    tiempo_entrega_estimado: str | None = Field(
-        default=None,
-        min_length=1
-    )
-
 
 class CotizacionRespuesta(BaseModel):
     id: int

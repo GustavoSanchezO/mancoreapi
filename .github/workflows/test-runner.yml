@@ -1,0 +1,17 @@
+name: Test self-hosted runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - name: Información del servidor
+        run: |
+          echo "🚀 GitHub Actions está ejecutándose en kuniboserver"
+          hostname
+          whoami
+          pwd
+          docker --version

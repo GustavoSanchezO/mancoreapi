@@ -15,85 +15,110 @@ IVA = Decimal("0.16")
 
 
 def calcular_cotizacion(
-    db: Session,
-    cotizacion: CotizacionDB
+    cotizacion,
+    db: Session | None = None
 ):
     """
-    Prepara los datos de una cotización almacenada en BD
+    Prepara los datos de una cotización (almacenada en BD o en memoria)
     para generar el PDF.
     """
+    # Si viene como CotizacionDB o se especificó db, procesamos vía SQLAlchemy
+    if isinstance(cotizacion, CotizacionDB) or db is not None:
+        if not isinstance(cotizacion, CotizacionDB) and db is not None:
+            # Si cotizacion es un ID o se pasó cotizacion como CotizacionDB implícito
+            pass
 
-    # ---------------------------------------------------------
-    # Obtener cliente
-    # ---------------------------------------------------------
-
-    cliente = (
-        db.query(Cliente)
-        .filter(Cliente.id == cotizacion.cliente_id)
-        .first()
-    )
-
-    # ---------------------------------------------------------
-    # Obtener proyecto
-    # ---------------------------------------------------------
-
-    proyecto = (
-        db.query(Proyecto)
-        .filter(Proyecto.id == cotizacion.proyecto_id)
-        .first()
-    )
-
-    # ---------------------------------------------------------
-    # Obtener partidas
-    # ---------------------------------------------------------
-
-    partidas = (
-        db.query(PartidaCotizacion)
-        .filter(
-            PartidaCotizacion.cotizacion_id == cotizacion.id
+        cliente = (
+            db.query(Cliente)
+            .filter(Cliente.id == cotizacion.cliente_id)
+            .first()
         )
-        .all()
-    )
 
-    partidas_pdf = []
+        proyecto = (
+            db.query(Proyecto)
+            .filter(Proyecto.id == cotizacion.proyecto_id)
+            .first()
+        )
 
-    for partida in partidas:
+        partidas = (
+            db.query(PartidaCotizacion)
+            .filter(
+                PartidaCotizacion.cotizacion_id == cotizacion.id
+            )
+            .all()
+        )
 
-        partidas_pdf.append({
-            "descripcion": partida.descripcion,
-            "cantidad": partida.cantidad,
-            "precio_unitario": partida.precio_unitario,
-            "total": partida.total
-        })
+        partidas_pdf = []
+        for partida in partidas:
+            partidas_pdf.append({
+                "descripcion": partida.descripcion,
+                "cantidad": partida.cantidad,
+                "precio_unitario": partida.precio_unitario,
+                "total": partida.total
+            })
 
-    # ---------------------------------------------------------
-    # Preparar datos para Jinja
-    # ---------------------------------------------------------
+        subtotal = cotizacion.subtotal
+        iva = cotizacion.iva
+        total = cotizacion.total
+        rfq = cotizacion.rfq
+        fecha = cotizacion.fecha
+        tiempo_entrega = cotizacion.tiempo_entrega_estimado
+
+    else:
+        # Cotización en memoria (modelo Pydantic)
+        cliente = cotizacion.cliente
+        # Aseguramos que el proyecto tenga el campo descripcion para la plantilla HTML
+        proyecto_nombre = getattr(cotizacion.proyecto, "nombre", "")
+        proyecto_desc = getattr(cotizacion.proyecto, "descripcion", None) or getattr(cotizacion.proyecto, "descripcion_corta", "")
+        
+        class ProyectoWrapper:
+            def __init__(self, nombre, descripcion):
+                self.nombre = nombre
+                self.descripcion = descripcion
+
+        proyecto = ProyectoWrapper(proyecto_nombre, proyecto_desc)
+
+        partidas_pdf = []
+        subtotal = Decimal("0.00")
+
+        for partida in cotizacion.partidas:
+            total_partida = Decimal(str(partida.cantidad)) * Decimal(str(partida.precio_unitario))
+            partidas_pdf.append({
+                "descripcion": partida.descripcion,
+                "cantidad": partida.cantidad,
+                "precio_unitario": partida.precio_unitario,
+                "total": total_partida
+            })
+            subtotal += total_partida
+
+        iva = subtotal * IVA
+        total = subtotal + iva
+        rfq = cotizacion.rfq
+        fecha = cotizacion.fecha
+        tiempo_entrega = cotizacion.tiempo_entrega_estimado
+
+    # Construimos la estructura normalizada para Jinja
+    cotizacion_wrapper = {
+        "rfq": rfq,
+        "fecha": fecha,
+        "cliente": cliente,
+        "proyecto": proyecto,
+        "tiempo_entrega_estimado": tiempo_entrega
+    }
 
     return {
-        "rfq": cotizacion.rfq,
-        "fecha": cotizacion.fecha,
-
+        "rfq": rfq,
+        "fecha": fecha,
         "cliente": cliente,
-
         "proyecto": proyecto,
-
+        "cotizacion": cotizacion_wrapper,
         "partidas": partidas_pdf,
-
-        "subtotal": cotizacion.subtotal,
-        "iva": cotizacion.iva,
-        "total": cotizacion.total,
-
-        "fecha_letras": fecha_en_letras(
-            cotizacion.fecha
-        ),
-
-        "total_letras": numero_a_letras(
-            cotizacion.total
-        ),
-
-        "tiempo_entrega_estimado":
-            cotizacion.tiempo_entrega_estimado
+        "subtotal": subtotal,
+        "iva": iva,
+        "total": total,
+        "fecha_letras": fecha_en_letras(fecha),
+        "total_letras": numero_a_letras(total),
+        "tiempo_entrega_estimado": tiempo_entrega
     }
 
 

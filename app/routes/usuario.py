@@ -1,22 +1,17 @@
-from datetime import datetime
+from datetime import datetime, timezone
+import os
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
-import secrets
-import os
-
-from app.auth.dependencias import require_admin
-from app.models.codigo_invitacion import CodigoInvitacion
 from sqlalchemy.orm import Session
 
+from app.auth.dependencias import get_current_user, require_admin
 from app.auth.google import oauth
 from app.database.dependencias import get_db
 from app.models.usuario import Usuario
-from app.models.proyecto import Proyecto
-from app.models.codigo_invitacion import CodigoInvitacion
-from app.models.invitacion import CodigoInvitacionRequest
-from app.auth.dependencias import get_current_user
+from app.models.invitacion_schema import CodigoInvitacionRequest
+from app.services import usuario as usuario_service
 
 router = APIRouter(
     prefix="/auth",
@@ -27,29 +22,18 @@ router = APIRouter(
 class UsuarioRolUpdate(BaseModel):
     rol: str
 
+
 class UsuarioEstadoUpdate(BaseModel):
     activo: bool
+
 
 @router.get("/")
 def listar_usuarios(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    # Retornamos los usuarios. FastAPI serializará automáticamente los objetos ORM.
-    # Necesitamos asegurar que no falle por ciclos, podemos devolver un dict o dejar que FastAPI y pydantic lo resuelvan si definimos un schema, pero para simplificar lo armamos:
-    usuarios = db.query(Usuario).all()
-    resultado = []
-    for u in usuarios:
-        resultado.append({
-            "id": u.id,
-            "email": u.email,
-            "nombre": u.nombre,
-            "rol": u.rol,
-            "activo": u.activo,
-            "fecha_creacion": u.fecha_creacion,
-            "proyectos": [{"id": p.id, "nombre": p.nombre} for p in u.proyectos]
-        })
-    return resultado
+    return usuario_service.obtener_usuarios(db)
+
 
 @router.put("/{usuario_id}/rol")
 def actualizar_rol_usuario(
@@ -58,12 +42,11 @@ def actualizar_rol_usuario(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    usuario = usuario_service.actualizar_rol_usuario(db, usuario_id, datos.rol)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    usuario.rol = datos.rol
-    db.commit()
     return {"mensaje": "Rol actualizado"}
+
 
 @router.put("/{usuario_id}/estado")
 def actualizar_estado_usuario(
@@ -72,14 +55,20 @@ def actualizar_estado_usuario(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    try:
+        usuario = usuario_service.actualizar_estado_usuario(
+            db=db,
+            usuario_id=usuario_id,
+            activo=datos.activo,
+            admin_id=admin.id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if usuario.id == admin.id:
-        raise HTTPException(status_code=400, detail="No puedes desactivarte a ti mismo")
-    usuario.activo = datos.activo
-    db.commit()
     return {"mensaje": "Estado actualizado"}
+
 
 @router.post("/{usuario_id}/proyectos/{proyecto_id}")
 def asignar_proyecto(
@@ -88,15 +77,11 @@ def asignar_proyecto(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    proyecto = db.query(Proyecto).filter(Proyecto.id == proyecto_id).first()
-    if not usuario or not proyecto:
+    exito = usuario_service.asignar_proyecto_usuario(db, usuario_id, proyecto_id)
+    if not exito:
         raise HTTPException(status_code=404, detail="Usuario o proyecto no encontrado")
-    
-    if proyecto not in usuario.proyectos:
-        usuario.proyectos.append(proyecto)
-        db.commit()
     return {"mensaje": "Proyecto asignado al usuario"}
+
 
 @router.delete("/{usuario_id}/proyectos/{proyecto_id}")
 def remover_proyecto(
@@ -105,15 +90,11 @@ def remover_proyecto(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    proyecto = db.query(Proyecto).filter(Proyecto.id == proyecto_id).first()
-    if not usuario or not proyecto:
+    exito = usuario_service.remover_proyecto_usuario(db, usuario_id, proyecto_id)
+    if not exito:
         raise HTTPException(status_code=404, detail="Usuario o proyecto no encontrado")
-    
-    if proyecto in usuario.proyectos:
-        usuario.proyectos.remove(proyecto)
-        db.commit()
     return {"mensaje": "Proyecto removido del usuario"}
+
 
 @router.get("/google/login")
 async def google_login(request: Request):
@@ -126,13 +107,13 @@ async def google_login(request: Request):
         redirect_uri
     )
 
+
 @router.get("/google/callback", name="google_callback")
 async def google_callback(
     request: Request,
     db: Session = Depends(get_db)
 ):
     token = await oauth.google.authorize_access_token(request)
-
     userinfo = token["userinfo"]
 
     google_id = userinfo["sub"]
@@ -147,9 +128,9 @@ async def google_callback(
 
     if not usuario:
         request.session["google_pending"] = {
-        "google_id": google_id,
-        "email": email,
-        "nombre": nombre
+            "google_id": google_id,
+            "email": email,
+            "nombre": nombre
         }
 
         frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
@@ -166,18 +147,17 @@ async def google_callback(
             }
         )
 
-    usuario.ultimo_acceso = datetime.utcnow()
-
+    usuario.ultimo_acceso = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
 
     request.session["user_id"] = usuario.id
-
     frontend_url = os.getenv("FRONTEND_URL", "https://administracion.mancore.mx")
 
     return RedirectResponse(
         url=f"{frontend_url}/",
         status_code=303
     )
+
 
 @router.get("/me")
 async def obtener_usuario_actual(
@@ -190,6 +170,7 @@ async def obtener_usuario_actual(
         "rol": usuario.rol
     }
 
+
 @router.post("/invitacion")
 async def usar_codigo_invitacion(
     datos: CodigoInvitacionRequest,
@@ -197,7 +178,6 @@ async def usar_codigo_invitacion(
     db: Session = Depends(get_db)
 ):
     pendiente = request.session.get("google_pending")
-
     if not pendiente:
         return JSONResponse(
             status_code=401,
@@ -206,41 +186,14 @@ async def usar_codigo_invitacion(
             }
         )
 
-    codigo = (
-        db.query(CodigoInvitacion)
-        .filter(
-            CodigoInvitacion.codigo == datos.codigo,
-            CodigoInvitacion.usado == False
-        )
-        .with_for_update()
-        .first()
-    )
-
-    if not codigo:
+    usuario = usuario_service.procesar_codigo_invitacion(db, datos.codigo, pendiente)
+    if not usuario:
         return JSONResponse(
             status_code=400,
             content={
                 "detail": "El código de invitación no es válido o ya fue utilizado."
             }
         )
-
-    usuario = Usuario(
-        google_id=pendiente["google_id"],
-        email=pendiente["email"],
-        nombre=pendiente["nombre"],
-        rol="EMPLEADO",
-        activo=True,
-        fecha_creacion=datetime.utcnow()
-    )
-
-    db.add(usuario)
-    db.flush()
-
-    codigo.usado = True
-    codigo.usuario_id = usuario.id
-    codigo.fecha_uso = datetime.utcnow()
-
-    db.commit()
 
     request.session.pop("google_pending", None)
     request.session["user_id"] = usuario.id
@@ -261,18 +214,7 @@ def generar_codigo_invitacion(
     usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    codigo = f"MANC-{secrets.token_urlsafe(8).upper()}"
-
-    nueva_invitacion = CodigoInvitacion(
-        codigo=codigo,
-        usado=False,
-        creado_por=usuario.id,
-        fecha_creacion=datetime.utcnow()
-    )
-
-    db.add(nueva_invitacion)
-    db.commit()
-    db.refresh(nueva_invitacion)
+    nueva_invitacion = usuario_service.generar_codigo_invitacion(db, usuario.id)
 
     return {
         "mensaje": "Código de invitación creado",
@@ -280,10 +222,10 @@ def generar_codigo_invitacion(
         "id": nueva_invitacion.id
     }
 
+
 @router.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-
     return {
         "mensaje": "Sesión cerrada correctamente"
     }

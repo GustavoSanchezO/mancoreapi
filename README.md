@@ -11,7 +11,7 @@ API backend built with FastAPI, PostgreSQL, and Alembic.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/GustavoSanchezOrtiz/mancoreapi.git
+   git clone https://github.com/GustavoSanchezO/mancoreapi.git
    cd mancoreapi
    ```
 
@@ -37,4 +37,3 @@ API backend built with FastAPI, PostgreSQL, and Alembic.
    ```bash
    uvicorn app.main:app --reload
    ```
-# mancoreapi

@@ -10,50 +10,7 @@ from app.database.dependencias import get_db
 
 from app.models.usuario import Usuario
 from app.models.cotizacion import Cotizacion
-from app.models.cotizacion_schema import CotizacionCrear
 from app.models.cotizacion_db import CotizacionDB
-
-from app.services.cotizacion import calcular_cotizacion
-from app.services.cotizacion_db import crear_cotizacion
-from app.services.pdf import generar_pdf
-
-from app.models.cotizacion_schema import (
-    CotizacionCrear,
-    CotizacionDetalleRespuesta
-)
-
-from app.services.cotizacion_db import (
-    crear_cotizacion,
-    obtener_cotizacion_detalle
-)
-
-from app.models.cotizacion_schema import (
-    CotizacionCrear,
-    CotizacionDetalleRespuesta,
-    CotizacionListaRespuesta
-)
-
-from app.services.cotizacion_db import (
-    crear_cotizacion,
-    obtener_cotizacion_detalle,
-    obtener_cotizaciones
-)
-
-from app.models.cotizacion_schema import (
-    CotizacionCrear,
-    CotizacionActualizar,
-    CotizacionDetalleRespuesta,
-    CotizacionListaRespuesta
-)
-
-from app.services.cotizacion_db import (
-    crear_cotizacion,
-    obtener_cotizacion_detalle,
-    obtener_cotizaciones,
-    actualizar_cotizacion,
-    actualizar_estado_cotizacion
-)
-
 from app.models.cotizacion_schema import (
     CotizacionCrear,
     CotizacionActualizar,
@@ -61,6 +18,16 @@ from app.models.cotizacion_schema import (
     CotizacionDetalleRespuesta,
     CotizacionListaRespuesta
 )
+
+from app.services.cotizacion import calcular_cotizacion
+from app.services.cotizacion_db import (
+    crear_cotizacion,
+    obtener_cotizacion_detalle,
+    obtener_cotizaciones,
+    actualizar_cotizacion,
+    actualizar_estado_cotizacion
+)
+from app.services.pdf import generar_pdf
 
 
 router = APIRouter(
@@ -199,15 +166,15 @@ def generar_pdf_cotizacion(
         )
 
     datos_pdf = calcular_cotizacion(
-        db=db,
-        cotizacion=cotizacion
+        cotizacion=cotizacion,
+        db=db
     )
 
     pdf = generar_pdf(datos_pdf)
 
-    nombre_proyecto = limpiar_nombre_archivo(
-        datos_pdf["proyecto"].nombre
-    )
+    proyecto_obj = datos_pdf.get("proyecto")
+    nombre_raw = getattr(proyecto_obj, "nombre", "proyecto") if proyecto_obj else "proyecto"
+    nombre_proyecto = limpiar_nombre_archivo(nombre_raw)
 
     nombre_archivo = (
         f"cotizacion-{cotizacion.rfq}-{nombre_proyecto}.pdf"
