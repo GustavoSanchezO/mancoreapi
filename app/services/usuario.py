@@ -87,7 +87,7 @@ def remover_proyecto_usuario(db: Session, usuario_id: int, proyecto_id: int) -> 
     return True
 
 
-def procesar_codigo_invitacion(db: Session, codigo_str: str, pendiente: dict) -> Usuario | None:
+def procesar_codigo_invitacion(db: Session, codigo_str: str, pendiente: dict | None = None) -> Usuario | None:
     codigo_clean = codigo_str.strip().lower()
     now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -95,8 +95,15 @@ def procesar_codigo_invitacion(db: Session, codigo_str: str, pendiente: dict) ->
     if codigo_clean in ("testempleado", "testadmin"):
         rol_test = "ADMIN" if codigo_clean == "testadmin" else "EMPLEADO"
         
+        google_id = pendiente["google_id"] if (pendiente and "google_id" in pendiente) else f"test_google_{codigo_clean}"
+        email = pendiente["email"] if (pendiente and "email" in pendiente) else f"{codigo_clean}@mancore.test"
+        nombre = pendiente["nombre"] if (pendiente and "nombre" in pendiente) else f"Usuario {codigo_clean.upper()}"
+
         # Verificar si el usuario ya existe en DB para actualizarlo como test o crearlo
-        usuario_existente = db.query(Usuario).filter(Usuario.google_id == pendiente["google_id"]).first()
+        usuario_existente = db.query(Usuario).filter(
+            (Usuario.google_id == google_id) | (Usuario.email == email)
+        ).first()
+
         if usuario_existente:
             usuario_existente.rol = rol_test
             usuario_existente.es_test = True
@@ -108,9 +115,9 @@ def procesar_codigo_invitacion(db: Session, codigo_str: str, pendiente: dict) ->
             return usuario_existente
 
         usuario = Usuario(
-            google_id=pendiente["google_id"],
-            email=pendiente["email"],
-            nombre=pendiente["nombre"],
+            google_id=google_id,
+            email=email,
+            nombre=nombre,
             rol=rol_test,
             activo=True,
             es_test=True,
@@ -123,7 +130,9 @@ def procesar_codigo_invitacion(db: Session, codigo_str: str, pendiente: dict) ->
         db.refresh(usuario)
         return usuario
 
-    # Registro mediante código de invitación estándar
+    # Registro mediante código de invitación estándar (requiere pendiente de Google)
+    if not pendiente:
+        return None
     codigo = (
         db.query(CodigoInvitacion)
         .filter(

@@ -19,10 +19,10 @@ class Usuario(Base):
         primary_key=True
     )
 
-    google_id: Mapped[str] = mapped_column(
+    google_id: Mapped[str | None] = mapped_column(
         String(255),
         unique=True,
-        nullable=False
+        nullable=True
     )
 
     email: Mapped[str] = mapped_column(
