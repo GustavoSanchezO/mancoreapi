@@ -16,8 +16,13 @@ from app.models.costo_mano_obra_real import CostoManoObraReal
 from app.models.costo_gasto_extra_real import CostoGastoExtraReal
 
 
-def obtener_usuarios(db: Session) -> list[dict]:
-    usuarios = db.query(Usuario).all()
+def obtener_usuarios(db: Session, admin: Usuario) -> list[dict]:
+    query = db.query(Usuario)
+    if admin.es_test:
+        query = query.filter(Usuario.es_test == True)
+    else:
+        query = query.filter(Usuario.es_test == False)
+    usuarios = query.all()
     resultado = []
     for u in usuarios:
         resultado.append({

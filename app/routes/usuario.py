@@ -32,7 +32,7 @@ def listar_usuarios(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    return usuario_service.obtener_usuarios(db)
+    return usuario_service.obtener_usuarios(db, admin)
 
 
 @router.put("/{usuario_id}/rol")
