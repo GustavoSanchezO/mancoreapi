@@ -196,27 +196,30 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
         return False
 
     try:
-        # 1. Obtener cotizaciones del usuario
-        cotizaciones = db.query(CotizacionDB).filter(CotizacionDB.usuario_id == usuario.id).all()
-        for cot in cotizaciones:
-            # Ventas asociadas a la cotización
-            ventas = db.query(Venta).filter(Venta.cotizacion_id == cot.id).all()
-            for v in ventas:
-                # Costos reales asociados a la venta
-                db.query(CostoMaterialReal).filter(CostoMaterialReal.venta_id == v.id).delete(synchronize_session=False)
-                db.query(CostoManoObraReal).filter(CostoManoObraReal.venta_id == v.id).delete(synchronize_session=False)
-                db.query(CostoGastoExtraReal).filter(CostoGastoExtraReal.venta_id == v.id).delete(synchronize_session=False)
-                db.delete(v)
-            
-            # Partidas y elementos hijos de la cotización
-            partidas = db.query(PartidaCotizacion).filter(PartidaCotizacion.cotizacion_id == cot.id).all()
-            for p in partidas:
-                db.query(MaterialCotizacion).filter(MaterialCotizacion.partida_id == p.id).delete(synchronize_session=False)
-                db.query(ManoObraCotizada).filter(ManoObraCotizada.partida_id == p.id).delete(synchronize_session=False)
-                db.query(GastoExtraCotizado).filter(GastoExtraCotizado.partida_id == p.id).delete(synchronize_session=False)
-                db.delete(p)
+        # 1. Obtener IDs de cotizaciones pertenecientes al usuario
+        cot_ids = [c[0] for c in db.query(CotizacionDB.id).filter(CotizacionDB.usuario_id == usuario.id).all()]
+        
+        if cot_ids:
+            # Ventas asociadas a las cotizaciones
+            venta_ids = [v[0] for v in db.query(Venta.id).filter(Venta.cotizacion_id.in_(cot_ids)).all()]
+            if venta_ids:
+                # Costos reales asociados a las ventas
+                db.query(CostoMaterialReal).filter(CostoMaterialReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+                db.query(CostoManoObraReal).filter(CostoManoObraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+                db.query(CostoGastoExtraReal).filter(CostoGastoExtraReal.venta_id.in_(venta_ids)).delete(synchronize_session=False)
+                db.query(Venta).filter(Venta.id.in_(venta_ids)).delete(synchronize_session=False)
 
-            db.delete(cot)
+            # Partidas asociadas a las cotizaciones
+            partida_ids = [p[0] for p in db.query(PartidaCotizacion.id).filter(PartidaCotizacion.cotizacion_id.in_(cot_ids)).all()]
+            if partida_ids:
+                # Hijos de las partidas
+                db.query(MaterialCotizacion).filter(MaterialCotizacion.partida_id.in_(partida_ids)).delete(synchronize_session=False)
+                db.query(ManoObraCotizada).filter(ManoObraCotizada.partida_id.in_(partida_ids)).delete(synchronize_session=False)
+                db.query(GastoExtraCotizado).filter(GastoExtraCotizado.partida_id.in_(partida_ids)).delete(synchronize_session=False)
+                db.query(PartidaCotizacion).filter(PartidaCotizacion.id.in_(partida_ids)).delete(synchronize_session=False)
+
+            # Eliminar cotizaciones
+            db.query(CotizacionDB).filter(CotizacionDB.id.in_(cot_ids)).delete(synchronize_session=False)
 
         # 2. Códigos de invitación del usuario
         db.query(CodigoInvitacion).filter(
@@ -225,6 +228,7 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
 
         # 3. Remover de la tabla intermedia usuario_proyecto
         usuario.proyectos.clear()
+        db.flush()
 
         # 4. Eliminar finalmente el registro de Usuario
         db.delete(usuario)
