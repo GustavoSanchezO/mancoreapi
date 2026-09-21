@@ -167,8 +167,21 @@ async def obtener_usuario_actual(
         "id": usuario.id,
         "email": usuario.email,
         "nombre": usuario.nombre,
-        "rol": usuario.rol
+        "rol": usuario.rol,
+        "es_test": usuario.es_test
     }
+
+
+@router.delete("/test/{usuario_id}")
+def eliminar_usuario_test(
+    usuario_id: int,
+    admin: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    exito = usuario_service.purgar_usuario_test(db, usuario_id)
+    if not exito:
+        raise HTTPException(status_code=404, detail="El usuario de prueba no existe o ya fue purgado.")
+    return {"mensaje": "Usuario de prueba y todos sus datos fueron eliminados físicamente."}
 
 
 @router.post("/invitacion")

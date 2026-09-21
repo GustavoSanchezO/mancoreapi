@@ -56,6 +56,17 @@ class Usuario(Base):
         nullable=True
     )
 
+    es_test: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
+    )
+
+    ultimo_cambio: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+
     proyectos: Mapped[List["Proyecto"]] = relationship(
         "Proyecto",
         secondary="usuario_proyecto",

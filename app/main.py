@@ -19,10 +19,37 @@ from app.routes.impuesto_mensual import (
 
 from app.routes.dashboard import router as dashboard_router
 
-from starlette.middleware.sessions import SessionMiddleware
+import asyncio
+from contextlib import asynccontextmanager
 import os 
 from dotenv import load_dotenv
+from starlette.middleware.sessions import SessionMiddleware
 from app.routes import venta
+
+from app.database.dependencias import get_db
+from app.services.usuario import purgar_usuarios_test_inactivos
+
+
+async def tareas_limpieza_test_loop():
+    while True:
+        try:
+            await asyncio.sleep(60)
+            db = next(get_db())
+            try:
+                purgar_usuarios_test_inactivos(db, minutos_inactividad=3)
+            finally:
+                db.close()
+        except asyncio.CancelledError:
+            break
+        except Exception:
+            pass
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(tareas_limpieza_test_loop())
+    yield
+    task.cancel()
 
 
 load_dotenv()
@@ -30,7 +57,8 @@ load_dotenv()
 app = FastAPI(
     title="Mancore API",
     description="API de Mancore",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
