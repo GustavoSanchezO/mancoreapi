@@ -1,17 +1,29 @@
-name: Test self-hosted runner
+name: Deploy Mancore API
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
 
 jobs:
-  test:
+  deploy:
     runs-on: self-hosted
 
     steps:
-      - name: Información del servidor
+      - name: Actualizar código
         run: |
-          echo "🚀 GitHub Actions está ejecutándose en kuniboserver"
-          hostname
-          whoami
-          pwd
-          docker --version
+          cd ~/mancoreapi
+          git fetch origin
+          git reset --hard origin/main
+
+      - name: Reconstruir API
+        run: |
+          cd ~/mancoreapi
+          docker compose up -d --build api
+
+      - name: Verificar API
+        run: |
+          docker compose ps api
+          docker ps --filter "name=mancore-api"
