@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.auth.dependencias import get_current_user
+from app.auth.dependencias import get_current_user, require_admin
 from app.database.dependencias import get_db
 
 from app.models.usuario import Usuario
@@ -36,7 +36,7 @@ router = APIRouter(
 )
 def crear_venta_endpoint(
     venta: VentaCrear,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:
@@ -60,7 +60,22 @@ def listar_ventas(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return obtener_ventas(db, usuario)
+    ventas = obtener_ventas(db, usuario)
+    resultados = []
+    for v in ventas:
+        v_dict = {
+            "id": v.id,
+            "cotizacion_id": v.cotizacion_id,
+            "fecha": v.fecha,
+            "fecha_pago": v.fecha_pago,
+            "estado": v.estado,
+            "subtotal": v.subtotal if usuario.rol == "ADMIN" else 0,
+            "iva": v.iva if usuario.rol == "ADMIN" else 0,
+            "total": v.total if usuario.rol == "ADMIN" else 0,
+            "fecha_creacion": v.fecha_creacion
+        }
+        resultados.append(v_dict)
+    return resultados
 
 
 @router.get(
@@ -74,6 +89,18 @@ def obtener_venta_endpoint(
 ):
     try:
         venta_detalle = obtener_venta_detalle(db, venta_id, usuario)
+        
+        # Obfuscate totals for non-admins
+        if usuario.rol != "ADMIN":
+            venta_detalle["subtotal"] = 0
+            venta_detalle["iva"] = 0
+            venta_detalle["total"] = 0
+            # VentaDetalleCompletoRespuesta also contains cotizacion which has its own totals
+            if "cotizacion" in venta_detalle:
+                venta_detalle["cotizacion"]["subtotal"] = 0
+                venta_detalle["cotizacion"]["iva"] = 0
+                venta_detalle["cotizacion"]["total"] = 0
+
         return venta_detalle
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -86,7 +113,7 @@ def obtener_venta_endpoint(
 def actualizar_estado_venta_endpoint(
     venta_id: int,
     datos: VentaEstadoActualizar,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:
@@ -107,7 +134,7 @@ def actualizar_estado_venta_endpoint(
 )
 def obtener_rentabilidad_venta_endpoint(
     venta_id: int,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:
@@ -123,7 +150,7 @@ def obtener_rentabilidad_venta_endpoint(
 def actualizar_venta_endpoint(
     venta_id: int,
     datos: VentaActualizar,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:

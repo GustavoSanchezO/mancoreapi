@@ -61,6 +61,9 @@ class CotizacionCrear(BaseModel):
         min_length=1
     )
 
+    nota_importante_id: int | None = None
+    anexos_fotograficos: list[str] = Field(default_factory=list)
+
 
 
 class CotizacionRespuesta(BaseModel):
@@ -75,6 +78,9 @@ class CotizacionRespuesta(BaseModel):
     subtotal: Decimal
     iva: Decimal
     total: Decimal
+    nota_importante_id: int | None = None
+    nota_importante_texto: str | None = None
+    anexos_fotograficos: list[str] = []
 
     class Config:
         from_attributes = True
@@ -140,6 +146,9 @@ class CotizacionDetalleRespuesta(BaseModel):
     iva: Decimal
     total: Decimal
     fecha_creacion: datetime | None
+    nota_importante_id: int | None = None
+    nota_importante_texto: str | None = None
+    anexos_fotograficos: list[str] = []
 
     partidas: list[PartidaCotizacionRespuesta]
 
@@ -156,6 +165,8 @@ class CotizacionListaRespuesta(BaseModel):
     iva: Decimal
     total: Decimal
     fecha_creacion: datetime
+    nota_importante_id: int | None = None
+    nota_importante_texto: str | None = None
 
     class Config:
         from_attributes = True
@@ -212,3 +223,6 @@ class CotizacionActualizar(BaseModel):
         ...,
         min_length=1
     )
+
+    nota_importante_id: int | None = None
+    anexos_fotograficos: list[str] = Field(default_factory=list)

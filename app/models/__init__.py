@@ -14,3 +14,5 @@ from app.models.costo_mano_obra_real import CostoManoObraReal
 from app.models.costo_gasto_extra_real import CostoGastoExtraReal
 from app.models.impuesto_mensual import ImpuestoMensual
 from app.models.usuario_proyecto import usuario_proyecto
+from app.models.nota_importante import NotaImportante
+from app.models.anexo_fotografico import AnexoFotografico

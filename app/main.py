@@ -10,14 +10,11 @@ from app.routes.material import router as material_router
 from app.routes.costo_mano_obra_real import (
     router as costo_mano_obra_real_router
 )
-from app.routes.costo_gasto_extra_real import (
-    router as costo_gasto_extra_real_router
-)
-from app.routes.impuesto_mensual import (
-    router as impuesto_mensual_router
-)
-
+from app.routes.costo_gasto_extra_real import router as costo_gasto_extra_real_router
+from app.routes.impuesto_mensual import router as impuesto_mensual_router
 from app.routes.dashboard import router as dashboard_router
+from app.routes.nota_importante import router as nota_importante_router
+from app.routes.upload import router as upload_router
 
 import asyncio
 from contextlib import asynccontextmanager
@@ -28,6 +25,7 @@ from app.routes import venta
 
 from app.database.dependencias import get_db
 from app.services.usuario import purgar_usuarios_test_inactivos
+from fastapi.staticfiles import StaticFiles
 
 
 async def tareas_limpieza_test_loop():
@@ -60,6 +58,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -109,3 +109,5 @@ app.include_router(costo_mano_obra_real_router)
 app.include_router(costo_gasto_extra_real_router)
 app.include_router(impuesto_mensual_router)
 app.include_router(dashboard_router)
+app.include_router(nota_importante_router)
+app.include_router(upload_router)

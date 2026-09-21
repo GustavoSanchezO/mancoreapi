@@ -354,13 +354,31 @@
 
         <section class="nota-importante">
 
-            <strong>NOTA IMPORTANTE:</strong>
-
-            La cotización no incluye ningún tipo de parte de reemplazo,
-            en caso de ser necesario se notificará la falla y se cotizará
-            por separado.
+            {% if cotizacion.nota_importante_texto %}
+                <strong>NOTA IMPORTANTE:</strong>
+                {{ cotizacion.nota_importante_texto | replace('\n', '<br>') | safe }}
+            {% endif %}
 
         </section>
+
+
+        <!-- =====================================
+             ANEXOS FOTOGRÁFICOS
+             ===================================== -->
+
+        {% if cotizacion.anexos_fotograficos and cotizacion.anexos_fotograficos|length > 0 %}
+        <section class="anexos-fotograficos" style="page-break-before: auto; margin-top: 20px;">
+            <h3 style="font-size: 10px; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-bottom: 15px;">Anexos Fotográficos</h3>
+            
+            <div style="width: 100%; text-align: left;">
+                {% for anexo in cotizacion.anexos_fotograficos %}
+                <div style="display: inline-block; width: 31%; margin: 1%; vertical-align: top; text-align: center;">
+                    <img src="..{{ anexo }}" style="width: 100%; height: auto; max-height: 220px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px;">
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
 
 
         <!-- =====================================

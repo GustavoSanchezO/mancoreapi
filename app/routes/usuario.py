@@ -98,6 +98,11 @@ def remover_proyecto(
 
 @router.get("/google/login")
 async def google_login(request: Request):
+    # Guardar origin en sesión para usarlo en el callback
+    origen = obtener_frontend_url(request)
+    if "frontend_url" not in request.session or request.session["frontend_url"] != origen:
+        request.session["frontend_url"] = origen
+
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", str(request.url_for("google_callback")))
     if redirect_uri.startswith("http://") and not ("localhost" in redirect_uri or "127.0.0.1" in redirect_uri):
         redirect_uri = redirect_uri.replace("http://", "https://", 1)
@@ -136,8 +141,10 @@ async def google_callback(
         .first()
     )
 
-    frontend_url = obtener_frontend_url(request)
-
+    frontend_url = request.session.get("frontend_url")
+    if not frontend_url:
+        frontend_url = obtener_frontend_url(request)
+        
     if not usuario:
         request.session["google_pending"] = {
             "google_id": google_id,

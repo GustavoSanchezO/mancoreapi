@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.auth.dependencias import get_current_user
+from app.auth.dependencias import get_current_user, require_admin
 from app.database.dependencias import get_db
 
 from app.models.usuario import Usuario
@@ -91,7 +91,7 @@ def generar_cotizacion(
 @router.post("/cotizaciones", response_model=CotizacionDetalleRespuesta)
 def crear_cotizacion_endpoint(
     datos: CotizacionCrear,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
 
@@ -120,7 +120,7 @@ def crear_cotizacion_endpoint(
     response_model=list[CotizacionListaRespuesta]
 )
 def listar_cotizaciones(
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     return obtener_cotizaciones(db, usuario)
@@ -196,7 +196,7 @@ def generar_pdf_cotizacion(
 def actualizar_cotizacion_endpoint(
     cotizacion_id: int,
     datos: CotizacionActualizar,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:
@@ -230,7 +230,7 @@ def actualizar_cotizacion_endpoint(
 def cambiar_estado_cotizacion(
     cotizacion_id: int,
     datos: CotizacionEstadoActualizar,
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     try:

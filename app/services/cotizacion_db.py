@@ -10,6 +10,8 @@ from app.models.material_cotizacion import MaterialCotizacion
 from app.models.mano_obra_cotizada import ManoObraCotizada
 from app.models.gasto_extra_cotizado import GastoExtraCotizado
 from app.models.costo_material_real import CostoMaterialReal
+from app.models.nota_importante import NotaImportante
+from app.models.anexo_fotografico import AnexoFotografico
 from app.services.seguridad_db import aplicar_filtro_test
 
 
@@ -57,11 +59,25 @@ def crear_cotizacion(db: Session, datos, usuario: Usuario):
             estado="COTIZACION",
             subtotal=Decimal("0.00"),
             iva=Decimal("0.00"),
-            total=Decimal("0.00")
+            total=Decimal("0.00"),
+            nota_importante_id=datos.nota_importante_id
         )
+
+        if datos.nota_importante_id:
+            nota = db.query(NotaImportante).filter(NotaImportante.id == datos.nota_importante_id).first()
+            if nota:
+                cotizacion.nota_importante_texto = nota.contenido
 
         db.add(cotizacion)
         db.flush()
+
+        if hasattr(datos, 'anexos_fotograficos') and datos.anexos_fotograficos:
+            for ruta in datos.anexos_fotograficos:
+                anexo = AnexoFotografico(
+                    cotizacion_id=cotizacion.id,
+                    ruta_imagen=ruta
+                )
+                db.add(anexo)
 
         subtotal = Decimal("0.00")
 
@@ -224,6 +240,20 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario: Usuario
             "gastos_extra": gastos_extra
         })
 
+    # Enmascarar totales de venta si no es admin
+    if usuario and usuario.rol != "ADMIN":
+        cotizacion_subtotal = Decimal("0.00")
+        cotizacion_iva = Decimal("0.00")
+        cotizacion_total = Decimal("0.00")
+        
+        for p in resultado_partidas:
+            p["precio_unitario"] = Decimal("0.00")
+            p["total"] = Decimal("0.00")
+    else:
+        cotizacion_subtotal = cotizacion.subtotal
+        cotizacion_iva = cotizacion.iva
+        cotizacion_total = cotizacion.total
+
     return {
         "id": cotizacion.id,
         "rfq": cotizacion.rfq,
@@ -233,10 +263,13 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario: Usuario
         "usuario_id": cotizacion.usuario_id,
         "tiempo_entrega_estimado": cotizacion.tiempo_entrega_estimado,
         "estado": cotizacion.estado,
-        "subtotal": cotizacion.subtotal,
-        "iva": cotizacion.iva,
-        "total": cotizacion.total,
+        "subtotal": cotizacion_subtotal,
+        "iva": cotizacion_iva,
+        "total": cotizacion_total,
         "fecha_creacion": cotizacion.fecha_creacion,
+        "nota_importante_id": cotizacion.nota_importante_id,
+        "nota_importante_texto": cotizacion.nota_importante_texto,
+        "anexos_fotograficos": [a.ruta_imagen for a in cotizacion.anexos],
         "partidas": resultado_partidas
     }
 
@@ -331,6 +364,22 @@ def actualizar_cotizacion(
         cotizacion.tiempo_entrega_estimado = (
             datos.tiempo_entrega_estimado
         )
+        cotizacion.nota_importante_id = datos.nota_importante_id
+        if datos.nota_importante_id:
+            nota = db.query(NotaImportante).filter(NotaImportante.id == datos.nota_importante_id).first()
+            if nota:
+                cotizacion.nota_importante_texto = nota.contenido
+        else:
+            cotizacion.nota_importante_texto = None
+
+        if hasattr(datos, 'anexos_fotograficos'):
+            db.query(AnexoFotografico).filter(AnexoFotografico.cotizacion_id == cotizacion.id).delete()
+            for ruta in datos.anexos_fotograficos:
+                anexo = AnexoFotografico(
+                    cotizacion_id=cotizacion.id,
+                    ruta_imagen=ruta
+                )
+                db.add(anexo)
 
         # =========================
         # PARTIDAS ACTUALES

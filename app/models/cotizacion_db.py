@@ -1,8 +1,8 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Boolean, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 
@@ -77,4 +77,20 @@ class CotizacionDB(Base):
         Boolean,
         nullable=False,
         default=False
+    )
+
+    nota_importante_id: Mapped[int] = mapped_column(
+        ForeignKey("notas_importantes.id"),
+        nullable=True
+    )
+
+    nota_importante_texto: Mapped[str] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    anexos = relationship(
+        "AnexoFotografico",
+        back_populates="cotizacion",
+        cascade="all, delete-orphan"
     )

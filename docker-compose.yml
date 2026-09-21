@@ -23,11 +23,14 @@ services:
       - .env
     ports:
       - "127.0.0.1:8001:8000"
+    volumes:
+      - mancore_api_uploads:/app/app/static/anexos
     networks:
       - mancore-network
 
 volumes:
   mancore_postgres_data:
+  mancore_api_uploads:
 
 networks:
   mancore-network:

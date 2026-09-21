@@ -63,7 +63,8 @@ def calcular_cotizacion(
         rfq = cotizacion.rfq
         fecha = cotizacion.fecha
         tiempo_entrega = cotizacion.tiempo_entrega_estimado
-
+        nota_importante_texto = getattr(cotizacion, "nota_importante_texto", None)
+        anexos_fotograficos = [anexo.ruta_imagen for anexo in cotizacion.anexos] if hasattr(cotizacion, "anexos") else []
     else:
         # Cotización en memoria (modelo Pydantic)
         cliente = cotizacion.cliente
@@ -96,6 +97,8 @@ def calcular_cotizacion(
         rfq = cotizacion.rfq
         fecha = cotizacion.fecha
         tiempo_entrega = cotizacion.tiempo_entrega_estimado
+        nota_importante_texto = getattr(cotizacion, "nota_importante_texto", None)
+        anexos_fotograficos = getattr(cotizacion, "anexos_fotograficos", [])
 
     # Construimos la estructura normalizada para Jinja
     cotizacion_wrapper = {
@@ -103,7 +106,8 @@ def calcular_cotizacion(
         "fecha": fecha,
         "cliente": cliente,
         "proyecto": proyecto,
-        "tiempo_entrega_estimado": tiempo_entrega
+        "tiempo_entrega_estimado": tiempo_entrega,
+        "nota_importante_texto": nota_importante_texto
     }
 
     return {
@@ -118,7 +122,9 @@ def calcular_cotizacion(
         "total": total,
         "fecha_letras": fecha_en_letras(fecha),
         "total_letras": numero_a_letras(total),
-        "tiempo_entrega_estimado": tiempo_entrega
+        "tiempo_entrega_estimado": tiempo_entrega,
+        "nota_importante_texto": nota_importante_texto,
+        "anexos_fotograficos": anexos_fotograficos
     }
 
 
