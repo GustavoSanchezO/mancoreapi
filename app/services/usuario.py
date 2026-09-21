@@ -251,7 +251,8 @@ def purgar_usuarios_test_inactivos(db: Session, minutos_inactividad: int = 3) ->
 
     purgados = 0
     for u in usuarios_test:
-        ultima_actividad = u.ultimo_cambio or u.ultimo_acceso or u.fecha_creacion
+        fechas = [d for d in [u.ultimo_cambio, u.ultimo_acceso, u.fecha_creacion] if d is not None]
+        ultima_actividad = max(fechas) if fechas else None
         if ultima_actividad and ultima_actividad <= limite:
             purgado = purgar_usuario_test(db, u.id)
             if purgado:
