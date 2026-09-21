@@ -25,5 +25,6 @@ jobs:
 
       - name: Verificar API
         run: |
+          cd ~/mancoreapi
           docker compose ps api
           docker ps --filter "name=mancore-api"
