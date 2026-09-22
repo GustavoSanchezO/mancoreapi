@@ -70,6 +70,9 @@ def asignar_proyecto_usuario(db: Session, usuario_id: int, proyecto_id: int) -> 
     if not usuario or not proyecto:
         return False
 
+    if usuario.es_test != proyecto.es_test:
+        raise ValueError("No se puede mezclar usuarios de prueba con proyectos reales (o viceversa)")
+
     if proyecto not in usuario.proyectos:
         usuario.proyectos.append(proyecto)
         if usuario.es_test:
@@ -247,6 +250,22 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
                 db.query(GastoExtraCotizado).filter(GastoExtraCotizado.partida_id.in_(partida_ids)).delete(synchronize_session=False)
                 db.query(PartidaCotizacion).filter(PartidaCotizacion.id.in_(partida_ids)).delete(synchronize_session=False)
 
+            # Eliminar archivos físicos de los anexos
+            from app.models.anexo_fotografico import AnexoFotografico
+            import os
+            anexos = db.query(AnexoFotografico.ruta_imagen).filter(AnexoFotografico.cotizacion_id.in_(cot_ids)).all()
+            for (ruta,) in anexos:
+                if ruta and ruta.startswith("/static/anexos/"):
+                    file_name = ruta.split("/")[-1]
+                    file_path = os.path.join("app/static/anexos", file_name)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+            
+            # Los registros de AnexoFotografico se eliminan por CASCADE,
+            # pero por precaución los borramos manualmente si es necesario,
+            # aunque SQLAlchemy con ondelete="CASCADE" se encarga a nivel BD.
+            db.query(AnexoFotografico).filter(AnexoFotografico.cotizacion_id.in_(cot_ids)).delete(synchronize_session=False)
+
             # Eliminar cotizaciones
             db.query(CotizacionDB).filter(CotizacionDB.id.in_(cot_ids)).delete(synchronize_session=False)
 
@@ -271,6 +290,16 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
 
         # 6. Eliminar finalmente el registro de Usuario
         db.delete(usuario)
+        
+        # 7. Eliminar Notas Importantes test huérfanas
+        from app.models.nota_importante import NotaImportante
+        db.query(NotaImportante).filter(
+            NotaImportante.es_test == True,
+            ~NotaImportante.id.in_(
+                db.query(CotizacionDB.nota_importante_id).filter(CotizacionDB.nota_importante_id.isnot(None))
+            )
+        ).delete(synchronize_session=False)
+
         db.commit()
         return True
 

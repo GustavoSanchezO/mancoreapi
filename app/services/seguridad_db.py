@@ -8,9 +8,6 @@ def aplicar_filtro_test(query, modelo, usuario: Usuario | None):
         return query.filter(modelo.es_test == False)
         
     if usuario.es_test:
-        if usuario.rol == "ADMIN":
-            return query.filter(modelo.es_test == True)
-        else:
-            return query.filter(modelo.es_test == True, modelo.usuario_id == usuario.id)
+        return query.filter(modelo.es_test == True)
     else:
         return query.filter(modelo.es_test == False)

@@ -91,13 +91,22 @@ def crear_venta(
 def obtener_ventas(db: Session, usuario: Usuario):
     query = db.query(Venta)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
+        from sqlalchemy import or_
         from app.models.cotizacion_db import CotizacionDB
-        query = query.join(CotizacionDB, Venta.cotizacion_id == CotizacionDB.id).join(
-            usuario_proyecto, 
-            CotizacionDB.proyecto_id == usuario_proyecto.c.proyecto_id
-        ).filter(
-            usuario_proyecto.c.usuario_id == usuario.id
+        from app.models.proyecto import Proyecto
+        query = query.filter(
+            Venta.cotizacion_id.in_(
+                db.query(CotizacionDB.id).filter(
+                    CotizacionDB.proyecto_id.in_(
+                        db.query(Proyecto.id).filter(
+                            or_(
+                                Proyecto.usuario_id == usuario.id,
+                                Proyecto.usuarios.any(Usuario.id == usuario.id)
+                            )
+                        )
+                    )
+                )
+            )
         )
     query = aplicar_filtro_test(query, Venta, usuario)
     return query.order_by(Venta.fecha_creacion.desc()).all()
@@ -109,13 +118,22 @@ def obtener_venta(
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
+        from sqlalchemy import or_
         from app.models.cotizacion_db import CotizacionDB
-        query = query.join(CotizacionDB, Venta.cotizacion_id == CotizacionDB.id).join(
-            usuario_proyecto, 
-            CotizacionDB.proyecto_id == usuario_proyecto.c.proyecto_id
-        ).filter(
-            usuario_proyecto.c.usuario_id == usuario.id
+        from app.models.proyecto import Proyecto
+        query = query.filter(
+            Venta.cotizacion_id.in_(
+                db.query(CotizacionDB.id).filter(
+                    CotizacionDB.proyecto_id.in_(
+                        db.query(Proyecto.id).filter(
+                            or_(
+                                Proyecto.usuario_id == usuario.id,
+                                Proyecto.usuarios.any(Usuario.id == usuario.id)
+                            )
+                        )
+                    )
+                )
+            )
         )
     query = aplicar_filtro_test(query, Venta, usuario)
     return query.first()
@@ -127,13 +145,22 @@ def obtener_venta_detalle(
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
+        from sqlalchemy import or_
         from app.models.cotizacion_db import CotizacionDB
-        query = query.join(CotizacionDB, Venta.cotizacion_id == CotizacionDB.id).join(
-            usuario_proyecto, 
-            CotizacionDB.proyecto_id == usuario_proyecto.c.proyecto_id
-        ).filter(
-            usuario_proyecto.c.usuario_id == usuario.id
+        from app.models.proyecto import Proyecto
+        query = query.filter(
+            Venta.cotizacion_id.in_(
+                db.query(CotizacionDB.id).filter(
+                    CotizacionDB.proyecto_id.in_(
+                        db.query(Proyecto.id).filter(
+                            or_(
+                                Proyecto.usuario_id == usuario.id,
+                                Proyecto.usuarios.any(Usuario.id == usuario.id)
+                            )
+                        )
+                    )
+                )
+            )
         )
     query = aplicar_filtro_test(query, Venta, usuario)
     venta = query.first()

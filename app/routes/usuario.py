@@ -77,10 +77,13 @@ def asignar_proyecto(
     admin: Usuario = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    exito = usuario_service.asignar_proyecto_usuario(db, usuario_id, proyecto_id)
-    if not exito:
-        raise HTTPException(status_code=404, detail="Usuario o proyecto no encontrado")
-    return {"mensaje": "Proyecto asignado al usuario"}
+    try:
+        exito = usuario_service.asignar_proyecto_usuario(db, usuario_id, proyecto_id)
+        if not exito:
+            raise HTTPException(status_code=404, detail="Usuario o proyecto no encontrado")
+        return {"mensaje": "Proyecto asignado al usuario"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{usuario_id}/proyectos/{proyecto_id}")

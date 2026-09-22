@@ -45,8 +45,13 @@ def crear_proyecto(
 def obtener_proyectos(db: Session, usuario: Usuario):
     query = db.query(Proyecto)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
-        query = query.join(usuario_proyecto).filter(usuario_proyecto.c.usuario_id == usuario.id)
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Proyecto.usuario_id == usuario.id,
+                Proyecto.usuarios.any(Usuario.id == usuario.id)
+            )
+        )
     query = aplicar_filtro_test(query, Proyecto, usuario)
     return query.all()
 
@@ -58,8 +63,13 @@ def obtener_proyecto(
 ):
     query = db.query(Proyecto).filter(Proyecto.id == proyecto_id)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
-        query = query.join(usuario_proyecto).filter(usuario_proyecto.c.usuario_id == usuario.id)
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Proyecto.usuario_id == usuario.id,
+                Proyecto.usuarios.any(Usuario.id == usuario.id)
+            )
+        )
     query = aplicar_filtro_test(query, Proyecto, usuario)
     return query.first()
 

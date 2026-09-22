@@ -276,12 +276,17 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario: Usuario
 def obtener_cotizaciones(db: Session, usuario: Usuario):
     query = db.query(CotizacionDB)
     if usuario and usuario.rol == "EMPLEADO":
-        from app.models.usuario_proyecto import usuario_proyecto
-        query = query.join(
-            usuario_proyecto, 
-            CotizacionDB.proyecto_id == usuario_proyecto.c.proyecto_id
-        ).filter(
-            usuario_proyecto.c.usuario_id == usuario.id
+        from sqlalchemy import or_
+        from app.models.proyecto import Proyecto
+        query = query.filter(
+            CotizacionDB.proyecto_id.in_(
+                db.query(Proyecto.id).filter(
+                    or_(
+                        Proyecto.usuario_id == usuario.id,
+                        Proyecto.usuarios.any(Usuario.id == usuario.id)
+                    )
+                )
+            )
         )
     query = aplicar_filtro_test(query, CotizacionDB, usuario)
     return query.order_by(CotizacionDB.fecha_creacion.desc()).all()

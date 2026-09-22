@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class ProyectoCrear(BaseModel):
@@ -28,6 +29,7 @@ class ProyectoRespuesta(BaseModel):
     descripcion: str
     cliente_id: int
     estado: str
+    fecha_creacion: datetime
 
     class Config:
         from_attributes = True

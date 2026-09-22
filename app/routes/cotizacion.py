@@ -120,7 +120,7 @@ def crear_cotizacion_endpoint(
     response_model=list[CotizacionListaRespuesta]
 )
 def listar_cotizaciones(
-    usuario: Usuario = Depends(require_admin),
+    usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     return obtener_cotizaciones(db, usuario)
