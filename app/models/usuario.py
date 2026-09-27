@@ -42,6 +42,11 @@ class Usuario(Base):
         default="EMPLEADO"
     )
 
+    foto_perfil: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
     activo: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

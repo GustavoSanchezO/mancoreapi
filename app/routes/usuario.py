@@ -26,6 +26,10 @@ class UsuarioRolUpdate(BaseModel):
 class UsuarioEstadoUpdate(BaseModel):
     activo: bool
 
+class UsuarioPerfilUpdate(BaseModel):
+    nombre: str
+    foto_perfil: str | None = None
+
 
 @router.get("/")
 def listar_usuarios(
@@ -188,7 +192,36 @@ async def obtener_usuario_actual(
         "email": usuario.email,
         "nombre": usuario.nombre,
         "rol": usuario.rol,
+        "foto_perfil": usuario.foto_perfil,
         "es_test": usuario.es_test
+    }
+
+
+@router.put("/me")
+async def actualizar_perfil(
+    datos: UsuarioPerfilUpdate,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not datos.nombre.strip():
+        raise HTTPException(status_code=400, detail="El nombre no puede estar vacío.")
+        
+    usuario.nombre = datos.nombre.strip()
+    if datos.foto_perfil is not None:
+        usuario.foto_perfil = datos.foto_perfil
+    
+    db.commit()
+    db.refresh(usuario)
+    return {
+        "mensaje": "Perfil actualizado",
+        "usuario": {
+            "id": usuario.id,
+            "email": usuario.email,
+            "nombre": usuario.nombre,
+            "rol": usuario.rol,
+            "foto_perfil": usuario.foto_perfil,
+            "es_test": usuario.es_test
+        }
     }
 
 

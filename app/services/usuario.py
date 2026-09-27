@@ -35,6 +35,7 @@ def obtener_usuarios(db: Session, admin: Usuario) -> list[dict]:
             "fecha_creacion": u.fecha_creacion,
             "ultimo_acceso": u.ultimo_acceso,
             "ultimo_cambio": u.ultimo_cambio,
+            "foto_perfil": u.foto_perfil,
             "proyectos": [{"id": p.id, "nombre": p.nombre} for p in u.proyectos]
         })
     return resultado
