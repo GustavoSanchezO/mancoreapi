@@ -16,7 +16,7 @@ from app.models.partida_cotizacion import PartidaCotizacion
 from app.models.material_cotizacion import MaterialCotizacion
 from app.models.mano_obra_cotizada import ManoObraCotizada
 from app.models.gasto_extra_cotizado import GastoExtraCotizado
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.models.costo_material_real import CostoMaterialReal
 from app.models.costo_mano_obra_real import CostoManoObraReal
@@ -91,9 +91,6 @@ def crear_venta(
 def obtener_ventas(db: Session, usuario: Usuario):
     query = db.query(Venta)
     if usuario and usuario.rol == "EMPLEADO":
-        from sqlalchemy import or_
-        from app.models.cotizacion_db import CotizacionDB
-        from app.models.proyecto import Proyecto
         query = query.filter(
             Venta.cotizacion_id.in_(
                 db.query(CotizacionDB.id).filter(
@@ -118,9 +115,6 @@ def obtener_venta(
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
-        from sqlalchemy import or_
-        from app.models.cotizacion_db import CotizacionDB
-        from app.models.proyecto import Proyecto
         query = query.filter(
             Venta.cotizacion_id.in_(
                 db.query(CotizacionDB.id).filter(
@@ -145,9 +139,6 @@ def obtener_venta_detalle(
 ):
     query = db.query(Venta).filter(Venta.id == venta_id)
     if usuario and usuario.rol == "EMPLEADO":
-        from sqlalchemy import or_
-        from app.models.cotizacion_db import CotizacionDB
-        from app.models.proyecto import Proyecto
         query = query.filter(
             Venta.cotizacion_id.in_(
                 db.query(CotizacionDB.id).filter(

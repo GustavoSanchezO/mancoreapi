@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.cotizacion_schema import (
     PartidaCotizacionRespuesta
@@ -43,12 +43,14 @@ class VentaDetalleRespuesta(BaseModel):
         from_attributes = True
 
 class VentaClienteRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     nombre_empresa: str
     direccion: str
 
 
 class VentaProyectoRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     nombre: str
     descripcion: str
@@ -56,6 +58,7 @@ class VentaProyectoRespuesta(BaseModel):
 
 
 class VentaCotizacionRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     rfq: str
     fecha: date
@@ -68,6 +71,7 @@ class VentaCotizacionRespuesta(BaseModel):
 
 
 class VentaDetalleCompletoRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     cotizacion_id: int
     fecha: date
