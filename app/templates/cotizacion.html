@@ -367,13 +367,13 @@
              ===================================== -->
 
         {% if cotizacion.anexos_fotograficos and cotizacion.anexos_fotograficos|length > 0 %}
-        <section class="anexos-fotograficos" style="page-break-before: auto; margin-top: 20px;">
+        <section class="anexos-fotograficos">
             <h3 style="font-size: 10px; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-bottom: 15px;">Anexos Fotográficos</h3>
-            
-            <div style="width: 100%; text-align: left;">
+
+            <div class="anexos-galeria">
                 {% for anexo in cotizacion.anexos_fotograficos %}
-                <div style="display: inline-block; width: 31%; margin: 1%; vertical-align: top; text-align: center;">
-                    <img src="..{{ anexo }}" style="width: 100%; height: auto; max-height: 220px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px;">
+                <div class="anexo-item">
+                    <img src="..{{ anexo }}" alt="Anexo {{ loop.index }}">
                 </div>
                 {% endfor %}
             </div>

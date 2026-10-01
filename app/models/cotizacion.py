@@ -24,6 +24,7 @@ class Proyecto(BaseModel):
 # que es el que vamos a usar en la ruta /generar/cotizacion
 class Cotizacion(BaseModel):
     rfq: str = Field(..., min_length=1)
+    nombre_archivo: str | None = None
     fecha: date
     tiempo_entrega_estimado: str = Field(..., min_length=1)
 

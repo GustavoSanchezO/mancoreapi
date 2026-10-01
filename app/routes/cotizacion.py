@@ -51,6 +51,27 @@ def limpiar_nombre_archivo(texto: str) -> str:
     return texto
 
 
+def construir_nombre_archivo_pdf(cotizacion) -> str:
+    nombre_base = getattr(cotizacion, "nombre_archivo", None) or f"RFQ REQ {cotizacion.rfq}"
+    nombre_base = nombre_base.strip()
+
+    if nombre_base.lower().endswith(".pdf"):
+        nombre_base = nombre_base[:-4]
+
+    nombre_base = unicodedata.normalize("NFKD", nombre_base)
+    nombre_base = nombre_base.encode("ascii", "ignore").decode("ascii")
+    nombre_base = re.sub(r"[^A-Za-z0-9\s-]+", " ", nombre_base)
+    nombre_base = re.sub(r"\s+", " ", nombre_base).strip()
+
+    if not nombre_base:
+        nombre_base = f"RFQ REQ {cotizacion.rfq}"
+
+    if not nombre_base.upper().startswith("RFQ REQ"):
+        nombre_base = f"RFQ REQ {nombre_base}"
+
+    return f"{nombre_base}.pdf"
+
+
 # ============================================================
 # ENDPOINT ANTIGUO - SOLO PDF
 # ============================================================
@@ -65,13 +86,7 @@ def generar_cotizacion(
 
     pdf = generar_pdf(datos)
 
-    nombre_proyecto = limpiar_nombre_archivo(
-        cotizacion.proyecto.nombre
-    )
-
-    nombre_archivo = (
-        f"cotizacion-{cotizacion.rfq}-{nombre_proyecto}.pdf"
-    )
+    nombre_archivo = construir_nombre_archivo_pdf(cotizacion)
 
     return StreamingResponse(
         pdf,
@@ -171,13 +186,7 @@ def generar_pdf_cotizacion(
 
     pdf = generar_pdf(datos_pdf)
 
-    proyecto_obj = datos_pdf.get("proyecto")
-    nombre_raw = getattr(proyecto_obj, "nombre", "proyecto") if proyecto_obj else "proyecto"
-    nombre_proyecto = limpiar_nombre_archivo(nombre_raw)
-
-    nombre_archivo = (
-        f"cotizacion-{cotizacion.rfq}-{nombre_proyecto}.pdf"
-    )
+    nombre_archivo = construir_nombre_archivo_pdf(cotizacion)
 
     return StreamingResponse(
         pdf,

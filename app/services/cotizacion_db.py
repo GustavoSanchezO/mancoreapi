@@ -1,3 +1,5 @@
+import re
+import unicodedata
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
@@ -16,6 +18,28 @@ from app.services.seguridad_db import aplicar_filtro_test
 
 
 IVA = Decimal("0.16")
+
+
+def normalizar_nombre_archivo(rfq: str, nombre_archivo: str | None = None) -> str:
+    rfq_limpio = str(rfq or "").strip()
+    nombre_base = (nombre_archivo or f"RFQ REQ {rfq_limpio}").strip()
+
+    if nombre_base.lower().endswith(".pdf"):
+        nombre_base = nombre_base[:-4]
+
+    nombre_base = unicodedata.normalize("NFKD", nombre_base)
+    nombre_base = nombre_base.encode("ascii", "ignore").decode("ascii")
+    nombre_base = re.sub(r"[^A-Za-z0-9\s-]+", " ", nombre_base)
+    nombre_base = re.sub(r"\s+", " ", nombre_base).strip()
+    nombre_base = nombre_base.strip(".")
+
+    if not nombre_base:
+        nombre_base = f"RFQ REQ {rfq_limpio}"
+
+    if nombre_base.upper().startswith("RFQ REQ"):
+        return nombre_base
+
+    return f"RFQ REQ {nombre_base}"
 
 
 def crear_cotizacion(db: Session, datos, usuario: Usuario):
@@ -50,6 +74,10 @@ def crear_cotizacion(db: Session, datos, usuario: Usuario):
         # Crear cotización
         cotizacion = CotizacionDB(
             rfq=datos.rfq,
+            nombre_archivo=normalizar_nombre_archivo(
+                rfq=datos.rfq,
+                nombre_archivo=getattr(datos, "nombre_archivo", None)
+            ),
             fecha=datos.fecha,
             cliente_id=datos.cliente_id,
             proyecto_id=datos.proyecto_id,
@@ -60,10 +88,15 @@ def crear_cotizacion(db: Session, datos, usuario: Usuario):
             subtotal=Decimal("0.00"),
             iva=Decimal("0.00"),
             total=Decimal("0.00"),
-            nota_importante_id=datos.nota_importante_id
+            nota_importante_id=datos.nota_importante_id,
+            nota_importante_texto=(
+                datos.nota_importante_texto
+                if getattr(datos, "nota_importante_texto", None)
+                else None
+            )
         )
 
-        if datos.nota_importante_id:
+        if not cotizacion.nota_importante_texto and datos.nota_importante_id:
             nota = db.query(NotaImportante).filter(NotaImportante.id == datos.nota_importante_id).first()
             if nota:
                 cotizacion.nota_importante_texto = nota.contenido
@@ -257,6 +290,7 @@ def obtener_cotizacion_detalle(db: Session, cotizacion_id: int, usuario: Usuario
     return {
         "id": cotizacion.id,
         "rfq": cotizacion.rfq,
+        "nombre_archivo": cotizacion.nombre_archivo,
         "fecha": cotizacion.fecha,
         "cliente_id": cotizacion.cliente_id,
         "proyecto_id": cotizacion.proyecto_id,
@@ -363,6 +397,10 @@ def actualizar_cotizacion(
         # =========================
 
         cotizacion.rfq = datos.rfq
+        cotizacion.nombre_archivo = normalizar_nombre_archivo(
+            rfq=datos.rfq,
+            nombre_archivo=getattr(datos, "nombre_archivo", None)
+        )
         cotizacion.fecha = datos.fecha
         cotizacion.cliente_id = datos.cliente_id
         cotizacion.proyecto_id = datos.proyecto_id
@@ -370,7 +408,9 @@ def actualizar_cotizacion(
             datos.tiempo_entrega_estimado
         )
         cotizacion.nota_importante_id = datos.nota_importante_id
-        if datos.nota_importante_id:
+        if getattr(datos, "nota_importante_texto", None):
+            cotizacion.nota_importante_texto = datos.nota_importante_texto
+        elif datos.nota_importante_id:
             nota = db.query(NotaImportante).filter(NotaImportante.id == datos.nota_importante_id).first()
             if nota:
                 cotizacion.nota_importante_texto = nota.contenido

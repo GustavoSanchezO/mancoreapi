@@ -21,6 +21,12 @@ class CotizacionDB(Base):
         nullable=False
     )
 
+    nombre_archivo: Mapped[str] = mapped_column(
+        String(255),
+        nullable=True,
+        default=None
+    )
+
     fecha: Mapped[date] = mapped_column(
         Date,
         nullable=False

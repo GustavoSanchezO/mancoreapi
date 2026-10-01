@@ -226,6 +226,39 @@ body {
     margin-bottom: 4mm;
 }
 
+.anexos-fotograficos {
+    margin-top: 20px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.anexos-galeria {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+}
+
+.anexo-item {
+    display: block;
+    width: 100%;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    text-align: center;
+}
+
+.anexo-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 4px;
+    background: #fff;
+}
+
 .titulo-seccion {
     text-align: center;
 

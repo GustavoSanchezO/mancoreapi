@@ -51,6 +51,7 @@ class PartidaCotizacionCrear(BaseModel):
 
 class CotizacionCrear(BaseModel):
     rfq: str = Field(..., min_length=1)
+    nombre_archivo: str | None = None
     fecha: date
     cliente_id: int = Field(..., gt=0)
     proyecto_id: int = Field(..., gt=0)
@@ -62,6 +63,7 @@ class CotizacionCrear(BaseModel):
     )
 
     nota_importante_id: int | None = None
+    nota_importante_texto: str | None = None
     anexos_fotograficos: list[str] = Field(default_factory=list)
 
 
@@ -69,6 +71,7 @@ class CotizacionCrear(BaseModel):
 class CotizacionRespuesta(BaseModel):
     id: int
     rfq: str
+    nombre_archivo: str | None = None
     fecha: date
     cliente_id: int
     proyecto_id: int
@@ -136,6 +139,7 @@ class PartidaCotizacionRespuesta(BaseModel):
 class CotizacionDetalleRespuesta(BaseModel):
     id: int
     rfq: str
+    nombre_archivo: str | None = None
     fecha: date
     cliente_id: int
     proyecto_id: int
@@ -155,6 +159,7 @@ class CotizacionDetalleRespuesta(BaseModel):
 class CotizacionListaRespuesta(BaseModel):
     id: int
     rfq: str
+    nombre_archivo: str | None = None
     fecha: date
     cliente_id: int
     proyecto_id: int
@@ -214,6 +219,7 @@ class PartidaCotizacionActualizar(BaseModel):
 
 class CotizacionActualizar(BaseModel):
     rfq: str = Field(..., min_length=1)
+    nombre_archivo: str | None = None
     fecha: date
     cliente_id: int = Field(..., gt=0)
     proyecto_id: int = Field(..., gt=0)
@@ -225,4 +231,5 @@ class CotizacionActualizar(BaseModel):
     )
 
     nota_importante_id: int | None = None
+    nota_importante_texto: str | None = None
     anexos_fotograficos: list[str] = Field(default_factory=list)
