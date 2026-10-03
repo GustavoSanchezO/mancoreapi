@@ -16,32 +16,34 @@ def crear_costo_gasto_extra_real(db: Session, datos):
     if not venta:
         return None
 
-    gasto = (
-        db.query(GastoExtraCotizado)
-        .filter(
-            GastoExtraCotizado.id == datos.gasto_extra_cotizado_id
+    gasto = None
+    if getattr(datos, "gasto_extra_cotizado_id", None) is not None:
+        gasto = (
+            db.query(GastoExtraCotizado)
+            .filter(
+                GastoExtraCotizado.id == datos.gasto_extra_cotizado_id
+            )
+            .first()
         )
-        .first()
-    )
 
-    if not gasto:
-        return None
+        if not gasto:
+            return None
 
-    partida = (
-        db.query(PartidaCotizacion)
-        .filter(
-            PartidaCotizacion.id == gasto.partida_id
+        partida = (
+            db.query(PartidaCotizacion)
+            .filter(
+                PartidaCotizacion.id == gasto.partida_id
+            )
+            .first()
         )
-        .first()
-    )
 
-    if not partida:
-        return None
+        if not partida:
+            return None
 
-    if partida.cotizacion_id != venta.cotizacion_id:
-        raise ValueError(
-            "El gasto extra cotizado no pertenece a la venta indicada."
-        )
+        if partida.cotizacion_id != venta.cotizacion_id:
+            raise ValueError(
+                "El gasto extra cotizado no pertenece a la venta indicada."
+            )
 
     total = datos.cantidad * datos.precio_unitario
 

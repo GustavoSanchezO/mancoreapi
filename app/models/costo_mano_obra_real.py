@@ -20,9 +20,9 @@ class CostoManoObraReal(Base):
         nullable=False
     )
 
-    mano_obra_cotizada_id: Mapped[int] = mapped_column(
+    mano_obra_cotizada_id: Mapped[int | None] = mapped_column(
         ForeignKey("mano_obra_cotizada.id"),
-        nullable=False
+        nullable=True
     )
 
     descripcion: Mapped[str] = mapped_column(

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 class CostoManoObraRealCrear(BaseModel):
     venta_id: int = Field(..., gt=0)
-    mano_obra_cotizada_id: int = Field(..., gt=0)
+    mano_obra_cotizada_id: int | None = None
     descripcion: str = Field(..., min_length=1)
     cantidad: Decimal = Field(..., gt=0)
     precio_unitario: Decimal = Field(..., gt=0)
@@ -23,7 +23,7 @@ class CostoManoObraRealActualizar(BaseModel):
 class CostoManoObraRealRespuesta(BaseModel):
     id: int
     venta_id: int
-    mano_obra_cotizada_id: int
+    mano_obra_cotizada_id: int | None = None
     descripcion: str
     cantidad: Decimal
     precio_unitario: Decimal

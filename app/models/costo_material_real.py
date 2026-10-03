@@ -20,9 +20,9 @@ class CostoMaterialReal(Base):
         nullable=False
     )
 
-    material_cotizacion_id: Mapped[int] = mapped_column(
+    material_cotizacion_id: Mapped[int | None] = mapped_column(
         ForeignKey("materiales_cotizacion.id"),
-        nullable=False
+        nullable=True
     )
 
     descripcion: Mapped[str] = mapped_column(

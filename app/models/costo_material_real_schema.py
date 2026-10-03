@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 class CostoMaterialRealCrear(BaseModel):
     venta_id: int = Field(..., gt=0)
-    material_cotizacion_id: int = Field(..., gt=0)
+    material_cotizacion_id: int | None = None
     descripcion: str = Field(..., min_length=1)
     cantidad: Decimal = Field(..., gt=0)
     precio_unitario: Decimal = Field(..., gt=0)
@@ -16,7 +16,7 @@ class CostoMaterialRealCrear(BaseModel):
 class CostoMaterialRealRespuesta(BaseModel):
     id: int
     venta_id: int
-    material_cotizacion_id: int
+    material_cotizacion_id: int | None = None
     descripcion: str
     cantidad: Decimal
     precio_unitario: Decimal

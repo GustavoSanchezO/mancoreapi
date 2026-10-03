@@ -16,32 +16,34 @@ def crear_costo_mano_obra_real(db: Session, datos):
     if not venta:
         return None
 
-    mano_obra = (
-        db.query(ManoObraCotizada)
-        .filter(
-            ManoObraCotizada.id == datos.mano_obra_cotizada_id
+    mano_obra = None
+    if getattr(datos, "mano_obra_cotizada_id", None) is not None:
+        mano_obra = (
+            db.query(ManoObraCotizada)
+            .filter(
+                ManoObraCotizada.id == datos.mano_obra_cotizada_id
+            )
+            .first()
         )
-        .first()
-    )
 
-    if not mano_obra:
-        return None
+        if not mano_obra:
+            return None
 
-    partida = (
-        db.query(PartidaCotizacion)
-        .filter(
-            PartidaCotizacion.id == mano_obra.partida_id
+        partida = (
+            db.query(PartidaCotizacion)
+            .filter(
+                PartidaCotizacion.id == mano_obra.partida_id
+            )
+            .first()
         )
-        .first()
-    )
 
-    if not partida:
-        return None
+        if not partida:
+            return None
 
-    if partida.cotizacion_id != venta.cotizacion_id:
-        raise ValueError(
-            "La mano de obra cotizada no pertenece a la venta indicada."
-        )
+        if partida.cotizacion_id != venta.cotizacion_id:
+            raise ValueError(
+                "La mano de obra cotizada no pertenece a la venta indicada."
+            )
 
     total = datos.cantidad * datos.precio_unitario
 

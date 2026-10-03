@@ -20,9 +20,9 @@ class CostoGastoExtraReal(Base):
         nullable=False
     )
 
-    gasto_extra_cotizado_id: Mapped[int] = mapped_column(
+    gasto_extra_cotizado_id: Mapped[int | None] = mapped_column(
         ForeignKey("gastos_extra_cotizados.id"),
-        nullable=False
+        nullable=True
     )
 
     descripcion: Mapped[str] = mapped_column(

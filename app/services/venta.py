@@ -25,6 +25,98 @@ from app.models.impuesto_mensual import ImpuestoMensual
 from app.models.usuario import Usuario
 from app.services.seguridad_db import aplicar_filtro_test
 
+def _crear_costos_reales_cero_para_venta(db: Session, venta: Venta):
+    materiales = (
+        db.query(MaterialCotizacion)
+        .join(PartidaCotizacion, PartidaCotizacion.id == MaterialCotizacion.partida_id)
+        .filter(PartidaCotizacion.cotizacion_id == venta.cotizacion_id)
+        .all()
+    )
+
+    for material in materiales:
+        existe = (
+            db.query(CostoMaterialReal.id)
+            .filter(
+                CostoMaterialReal.venta_id == venta.id,
+                CostoMaterialReal.material_cotizacion_id == material.id
+            )
+            .first()
+        )
+
+        if not existe:
+            db.add(
+                CostoMaterialReal(
+                    venta_id=venta.id,
+                    material_cotizacion_id=material.id,
+                    descripcion=material.descripcion,
+                    cantidad=Decimal("0.00"),
+                    precio_unitario=Decimal("0.00"),
+                    total=Decimal("0.00"),
+                    fecha=venta.fecha,
+                )
+            )
+
+    mano_obra = (
+        db.query(ManoObraCotizada)
+        .join(PartidaCotizacion, PartidaCotizacion.id == ManoObraCotizada.partida_id)
+        .filter(PartidaCotizacion.cotizacion_id == venta.cotizacion_id)
+        .all()
+    )
+
+    for item in mano_obra:
+        existe = (
+            db.query(CostoManoObraReal.id)
+            .filter(
+                CostoManoObraReal.venta_id == venta.id,
+                CostoManoObraReal.mano_obra_cotizada_id == item.id
+            )
+            .first()
+        )
+
+        if not existe:
+            db.add(
+                CostoManoObraReal(
+                    venta_id=venta.id,
+                    mano_obra_cotizada_id=item.id,
+                    descripcion=item.descripcion,
+                    cantidad=Decimal("0.00"),
+                    precio_unitario=Decimal("0.00"),
+                    total=Decimal("0.00"),
+                    fecha=venta.fecha,
+                )
+            )
+
+    gastos_extra = (
+        db.query(GastoExtraCotizado)
+        .join(PartidaCotizacion, PartidaCotizacion.id == GastoExtraCotizado.partida_id)
+        .filter(PartidaCotizacion.cotizacion_id == venta.cotizacion_id)
+        .all()
+    )
+
+    for gasto in gastos_extra:
+        existe = (
+            db.query(CostoGastoExtraReal.id)
+            .filter(
+                CostoGastoExtraReal.venta_id == venta.id,
+                CostoGastoExtraReal.gasto_extra_cotizado_id == gasto.id
+            )
+            .first()
+        )
+
+        if not existe:
+            db.add(
+                CostoGastoExtraReal(
+                    venta_id=venta.id,
+                    gasto_extra_cotizado_id=gasto.id,
+                    descripcion=gasto.descripcion,
+                    cantidad=Decimal("0.00"),
+                    precio_unitario=Decimal("0.00"),
+                    total=Decimal("0.00"),
+                    fecha=venta.fecha,
+                )
+            )
+
+
 def crear_venta(
     db: Session,
     cotizacion_id: int,
@@ -78,7 +170,10 @@ def crear_venta(
         )
 
         db.add(venta)
+        db.flush()
+        db.refresh(venta)
 
+        _crear_costos_reales_cero_para_venta(db, venta)
         db.commit()
         db.refresh(venta)
 
