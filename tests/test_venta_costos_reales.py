@@ -108,7 +108,7 @@ def test_crear_costo_material_real_manual_sin_material_cotizado():
     assert costo.total == Decimal("37.50")
 
 
-def test_crear_venta_genera_costos_reales_cero():
+def test_crear_venta_genera_costos_reales_iguales_a_cotizados():
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
@@ -218,5 +218,19 @@ def test_crear_venta_genera_costos_reales_cero():
     assert session.query(CostoGastoExtraReal).filter_by(venta_id=venta.id, gasto_extra_cotizado_id=gasto.id).count() == 1
 
     costo_material = session.query(CostoMaterialReal).filter_by(venta_id=venta.id, material_cotizacion_id=material.id).one()
-    assert costo_material.cantidad == Decimal("0.00")
-    assert costo_material.total == Decimal("0.00")
+    assert costo_material.descripcion == material.descripcion
+    assert costo_material.cantidad == material.cantidad
+    assert costo_material.precio_unitario == material.precio_unitario
+    assert costo_material.total == material.total
+
+    costo_mano_obra = session.query(CostoManoObraReal).filter_by(venta_id=venta.id, mano_obra_cotizada_id=mano_obra.id).one()
+    assert costo_mano_obra.descripcion == mano_obra.descripcion
+    assert costo_mano_obra.cantidad == mano_obra.cantidad
+    assert costo_mano_obra.precio_unitario == mano_obra.precio_unitario
+    assert costo_mano_obra.total == mano_obra.total
+
+    costo_gasto_extra = session.query(CostoGastoExtraReal).filter_by(venta_id=venta.id, gasto_extra_cotizado_id=gasto.id).one()
+    assert costo_gasto_extra.descripcion == gasto.descripcion
+    assert costo_gasto_extra.cantidad == gasto.cantidad
+    assert costo_gasto_extra.precio_unitario == gasto.precio_unitario
+    assert costo_gasto_extra.total == gasto.total

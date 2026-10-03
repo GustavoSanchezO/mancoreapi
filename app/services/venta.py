@@ -49,9 +49,9 @@ def _crear_costos_reales_cero_para_venta(db: Session, venta: Venta):
                     venta_id=venta.id,
                     material_cotizacion_id=material.id,
                     descripcion=material.descripcion,
-                    cantidad=Decimal("0.00"),
-                    precio_unitario=Decimal("0.00"),
-                    total=Decimal("0.00"),
+                    cantidad=material.cantidad,
+                    precio_unitario=material.precio_unitario,
+                    total=material.total,
                     fecha=venta.fecha,
                 )
             )
@@ -79,9 +79,9 @@ def _crear_costos_reales_cero_para_venta(db: Session, venta: Venta):
                     venta_id=venta.id,
                     mano_obra_cotizada_id=item.id,
                     descripcion=item.descripcion,
-                    cantidad=Decimal("0.00"),
-                    precio_unitario=Decimal("0.00"),
-                    total=Decimal("0.00"),
+                    cantidad=item.cantidad,
+                    precio_unitario=item.precio_unitario,
+                    total=item.total,
                     fecha=venta.fecha,
                 )
             )
@@ -109,9 +109,9 @@ def _crear_costos_reales_cero_para_venta(db: Session, venta: Venta):
                     venta_id=venta.id,
                     gasto_extra_cotizado_id=gasto.id,
                     descripcion=gasto.descripcion,
-                    cantidad=Decimal("0.00"),
-                    precio_unitario=Decimal("0.00"),
-                    total=Decimal("0.00"),
+                    cantidad=gasto.cantidad,
+                    precio_unitario=gasto.precio_unitario,
+                    total=gasto.total,
                     fecha=venta.fecha,
                 )
             )
