@@ -228,8 +228,8 @@ body {
 
 .anexos-fotograficos {
     margin-top: 20px;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
 }
 
 .anexos-galeria {
@@ -376,7 +376,8 @@ body {
 }
 
 .partida {
-    page-break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
 }
 
 
