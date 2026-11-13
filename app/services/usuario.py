@@ -270,6 +270,67 @@ def purgar_usuario_test(db: Session, usuario_id: int) -> bool:
             # Eliminar cotizaciones
             db.query(CotizacionDB).filter(CotizacionDB.id.in_(cot_ids)).delete(synchronize_session=False)
 
+        # 1b. Reportes de Mantenimiento pertenecientes al usuario o a sus clientes
+        from app.models.reporte_mantenimiento import (
+            ReporteMantenimiento,
+            ReporteMantenimientoSeccion,
+            ReporteMantenimientoActividad,
+            ReporteMantenimientoAnexo,
+            ReporteMantenimientoParte,
+            ReporteMantenimientoParteImagen,
+        )
+        rep_condiciones = [ReporteMantenimiento.usuario_id == usuario.id]
+        if cliente_ids:
+            rep_condiciones.append(ReporteMantenimiento.cliente_id.in_(cliente_ids))
+        rep_ids = [r[0] for r in db.query(ReporteMantenimiento.id).filter(or_(*rep_condiciones)).all()]
+
+        if rep_ids:
+            import os
+            anexos_rep = db.query(ReporteMantenimientoAnexo.ruta_imagen).filter(
+                ReporteMantenimientoAnexo.reporte_id.in_(rep_ids)
+            ).all()
+            parte_ids = [p[0] for p in db.query(ReporteMantenimientoParte.id).filter(
+                ReporteMantenimientoParte.reporte_id.in_(rep_ids)
+            ).all()]
+            parte_imgs = []
+            if parte_ids:
+                parte_imgs = db.query(ReporteMantenimientoParteImagen.ruta_imagen).filter(
+                    ReporteMantenimientoParteImagen.parte_id.in_(parte_ids)
+                ).all()
+
+            sec_ids = [s[0] for s in db.query(ReporteMantenimientoSeccion.id).filter(
+                ReporteMantenimientoSeccion.reporte_id.in_(rep_ids)
+            ).all()]
+            if sec_ids:
+                db.query(ReporteMantenimientoActividad).filter(
+                    ReporteMantenimientoActividad.seccion_id.in_(sec_ids)
+                ).delete(synchronize_session=False)
+                db.query(ReporteMantenimientoSeccion).filter(
+                    ReporteMantenimientoSeccion.id.in_(sec_ids)
+                ).delete(synchronize_session=False)
+
+            if parte_ids:
+                db.query(ReporteMantenimientoParteImagen).filter(
+                    ReporteMantenimientoParteImagen.parte_id.in_(parte_ids)
+                ).delete(synchronize_session=False)
+                db.query(ReporteMantenimientoParte).filter(
+                    ReporteMantenimientoParte.id.in_(parte_ids)
+                ).delete(synchronize_session=False)
+
+            db.query(ReporteMantenimientoAnexo).filter(
+                ReporteMantenimientoAnexo.reporte_id.in_(rep_ids)
+            ).delete(synchronize_session=False)
+            db.query(ReporteMantenimiento).filter(
+                ReporteMantenimiento.id.in_(rep_ids)
+            ).delete(synchronize_session=False)
+
+            for (ruta,) in anexos_rep + parte_imgs:
+                if ruta and ruta.startswith("/static/anexos/"):
+                    file_name = ruta.split("/")[-1]
+                    file_path = os.path.join("app/static/anexos", file_name)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+
         # 2. Desvincular materiales para evitar FK en otras cotizaciones
         if material_ids:
             db.query(MaterialCotizacion).filter(MaterialCotizacion.material_id.in_(material_ids)).update({MaterialCotizacion.material_id: None}, synchronize_session=False)

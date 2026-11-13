@@ -15,6 +15,7 @@ from app.routes.impuesto_mensual import router as impuesto_mensual_router
 from app.routes.dashboard import router as dashboard_router
 from app.routes.nota_importante import router as nota_importante_router
 from app.routes.upload import router as upload_router
+from app.routes.reporte_mantenimiento import router as reporte_mantenimiento_router
 
 import asyncio
 from contextlib import asynccontextmanager
@@ -112,3 +113,4 @@ app.include_router(impuesto_mensual_router)
 app.include_router(dashboard_router)
 app.include_router(nota_importante_router)
 app.include_router(upload_router)
+app.include_router(reporte_mantenimiento_router)

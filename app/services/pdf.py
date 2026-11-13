@@ -41,3 +41,16 @@ def generar_pdf(datos):
     ).write_pdf()
 
     return BytesIO(pdf)
+
+
+def generar_pdf_reporte_mantenimiento(datos):
+    template = templates.get_template("reporte_mantenimiento.html")
+
+    html = template.render(reporte=datos)
+
+    pdf = HTML(
+        string=html,
+        base_url=str(TEMPLATES_DIR)
+    ).write_pdf()
+
+    return BytesIO(pdf)

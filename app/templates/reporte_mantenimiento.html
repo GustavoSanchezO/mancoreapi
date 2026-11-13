@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ reporte.titulo_documento }}</title>
+    <link rel="stylesheet" href="reporte_mantenimiento.css">
+</head>
+
+<body>
+
+    <!-- =========================================
+         ELEMENTOS FIJOS
+         ========================================= -->
+
+    <header class="encabezado">
+        <div class="encabezado-titulo">
+            REPORTE DE MANTENIMIENTO
+        </div>
+    </header>
+
+    <div class="marca-agua">
+        <img src="assets/logo-mancore.jpeg" alt="">
+    </div>
+
+    <footer class="pie-pagina">
+        <div class="contacto">
+            <div class="contacto-titulo">CONTACTO</div>
+            <div>mancoreindustrial@gmail.com</div>
+        </div>
+
+        <div class="logo">
+            <img src="assets/logo-mancore.jpeg" alt="Mancore">
+        </div>
+    </footer>
+
+
+    <!-- =========================================
+         CONTENIDO VARIABLE
+         ========================================= -->
+
+    <main class="contenido">
+
+        <!-- INFORMACIÓN DEL CLIENTE + FOLIO / FECHA AL MISMO NIVEL -->
+        <section class="seccion cabecera-cliente-fecha">
+            <div class="cliente-bloque">
+                <h2 class="titulo-seccion titulo-seccion-izquierda">INFORMACIÓN DEL CLIENTE.</h2>
+
+                <table class="informacion-tabla">
+                    <tr>
+                        <td class="etiqueta">Nombre:</td>
+                        <td>{{ reporte.cliente_nombre }}</td>
+                    </tr>
+                    <tr>
+                        <td class="etiqueta">Dirección:</td>
+                        <td>{{ reporte.cliente_direccion }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="datos-documento">
+                <div>
+                    Folio:&nbsp;&nbsp;<span class="folio-valor">{{ reporte.folio }}</span>
+                </div>
+                <div>
+                    Fecha:&nbsp;&nbsp;{{ reporte.fecha_letras }}
+                </div>
+            </div>
+        </section>
+
+        <!-- INFORMACIÓN DEL EQUIPO Y MANTENIMIENTO -->
+        <section class="seccion">
+            <h2 class="titulo-seccion">INFORMACIÓN DEL MANTENIMIENTO.</h2>
+
+            <table class="informacion-tabla">
+                <tr>
+                    <td class="etiqueta">Tipo de Mtto.:</td>
+                    <td>{{ reporte.tipo_mantenimiento }}</td>
+                </tr>
+                <tr>
+                    <td class="etiqueta">Equipo:</td>
+                    <td>
+                        <div class="equipo-fila">
+                            <span class="equipo-dato"><strong>Unidad:</strong> {{ reporte.unidad }}</span>
+                            <span class="equipo-dato"><strong>Marca:</strong> {{ reporte.marca }}</span>
+                            <span class="equipo-dato"><strong>Modelo:</strong> {{ reporte.modelo }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECCIONES DE ACTIVIDADES -->
+        {% for seccion in reporte.secciones %}
+        <section class="reporte-seccion">
+            <div class="barra-seccion">
+                {{ loop.index }}. {{ seccion.titulo }}
+            </div>
+
+            <table class="tabla-actividades">
+                <thead>
+                    <tr>
+                        <th class="col-item">ITEM</th>
+                        <th class="col-actividad">ACTIVIDAD</th>
+                        <th class="col-estado">Estado</th>
+                        <th class="col-observaciones">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for act in seccion.actividades %}
+                    <tr class="actividad-fila">
+                        <td class="celda-item">{{ act.item_numero }}</td>
+                        <td class="celda-actividad">{{ act.actividad }}</td>
+                        <td class="celda-estado">{{ act.estado }}</td>
+                        <td class="celda-observaciones">
+                            {% if act.observaciones %}
+                                {{ act.observaciones | e | replace('\n', '<br>') | safe }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endfor %}
+
+        <!-- OBSERVACIONES GENERALES -->
+        {% if reporte.observaciones_generales %}
+        <section class="observaciones-generales">
+            <strong>OBSERVACIONES GENERALES:</strong>
+            <div class="observaciones-generales-contenido">
+                {{ reporte.observaciones_generales | replace('\n', '<br>') | safe }}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- ANEXOS FOTOGRÁFICOS -->
+        {% if reporte.anexos_fotograficos and reporte.anexos_fotograficos | length > 0 %}
+        <section class="anexos-fotograficos">
+            <h3 class="subtitulo-bloque">Anexos Fotográficos</h3>
+
+            <div class="anexos-galeria">
+                {% for anexo in reporte.anexos_fotograficos %}
+                <div class="anexo-item">
+                    <img src="{{ '..' + anexo if anexo.startswith('/') else anexo }}" alt="Anexo {{ loop.index }}">
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- PARTES DE REEMPLAZO -->
+        {% if reporte.partes_reemplazo and reporte.partes_reemplazo | length > 0 %}
+        <section class="anexos-fotograficos">
+            <h3 class="subtitulo-bloque">Partes de Reemplazo</h3>
+
+            {% for parte in reporte.partes_reemplazo %}
+            <div class="parte-reemplazo-bloque">
+                <div class="parte-reemplazo-titulo">{{ parte.descripcion }}</div>
+                {% if parte.imagenes and parte.imagenes | length > 0 %}
+                <div class="anexos-galeria">
+                    {% for img in parte.imagenes %}
+                    <div class="anexo-item">
+                        <img src="{{ '..' + img if img.startswith('/') else img }}" alt="Parte de reemplazo {{ loop.index }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+    </main>
+
+</body>
+
+</html>

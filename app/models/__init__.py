@@ -16,3 +16,11 @@ from app.models.impuesto_mensual import ImpuestoMensual
 from app.models.usuario_proyecto import usuario_proyecto
 from app.models.nota_importante import NotaImportante
 from app.models.anexo_fotografico import AnexoFotografico
+from app.models.reporte_mantenimiento import (
+    ReporteMantenimiento,
+    ReporteMantenimientoSeccion,
+    ReporteMantenimientoActividad,
+    ReporteMantenimientoAnexo,
+    ReporteMantenimientoParte,
+    ReporteMantenimientoParteImagen,
+)
