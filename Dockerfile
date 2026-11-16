@@ -21,11 +21,17 @@ RUN apt-get update && apt-get install -y \
     libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN useradd -m -u 1000 appuser
+
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=appuser:appuser . .
+
+RUN mkdir -p /app/app/static/anexos && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 
